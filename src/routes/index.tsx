@@ -55,6 +55,7 @@ function Home() {
         </label>
         <Link
           to="/search"
+          search={{ q: "" }}
           aria-label="Filters"
           className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card"
         >
