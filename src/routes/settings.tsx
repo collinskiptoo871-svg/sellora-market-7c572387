@@ -95,10 +95,15 @@ function Settings() {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </>
               );
-              const cls = `flex w-full items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`;
+              const cls = `flex w-full items-center gap-3 px-4 py-3 text-left ${i > 0 ? "border-t border-border" : ""}`;
               return (
                 <li key={it.label}>
-                  {it.to ? <Link to={it.to} className={cls}>{Inner}</Link> : <button className={cls + " text-left"}>{Inner}</button>}
+                  <button
+                    className={cls}
+                    onClick={() => it.to && navigate({ to: it.to })}
+                  >
+                    {Inner}
+                  </button>
                 </li>
               );
             })}
