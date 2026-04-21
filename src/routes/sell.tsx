@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
+import { GuestGate } from "@/components/GuestGate";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { CATEGORIES } from "@/lib/countries";
-import { ArrowLeft, Image as ImageIcon, Upload, X } from "lucide-react";
+import { CATEGORIES, COUNTRIES } from "@/lib/countries";
+import { describeGeoError, requestGeolocation } from "@/lib/geo";
+import { ArrowLeft, Image as ImageIcon, Loader2, MapPin, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/sell")({
@@ -30,13 +32,28 @@ function Sell() {
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState<typeof CONDITIONS[number]["v"]>("new");
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
   const [shipping, setShipping] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [geoConfirmed, setGeoConfirmed] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth" });
-  }, [user, loading, navigate]);
+  const detectLocation = async () => {
+    setGeoBusy(true);
+    try {
+      const g = await requestGeolocation();
+      const match = COUNTRIES.find((c) => c.toLowerCase() === g.country.toLowerCase()) || g.country;
+      setCountry(match);
+      setLocation(g.city || "");
+      setGeoConfirmed(true);
+      toast.success(`Location set: ${g.city ? g.city + ", " : ""}${match}`);
+    } catch (e) {
+      toast.error(describeGeoError(e));
+    } finally {
+      setGeoBusy(false);
+    }
+  };
 
   const addPhotos = (files: FileList) => {
     const remaining = 3 - photos.length;
@@ -57,6 +74,10 @@ function Sell() {
       toast.error("Title and price are required");
       return;
     }
+    if (!geoConfirmed || !country || !location) {
+      toast.error("Please verify your location before listing");
+      return;
+    }
     setBusy(true);
     try {
       const photoUrls: string[] = [];
@@ -73,7 +94,7 @@ function Sell() {
         description: description.trim(),
         condition,
         category,
-        location: location.trim(),
+        location: `${location.trim()}, ${country}`,
         shipping_available: shipping,
         photos: photoUrls,
       });
@@ -86,6 +107,9 @@ function Sell() {
       setBusy(false);
     }
   };
+
+  if (loading) return <AppLayout><p className="text-sm text-muted-foreground">Loading…</p></AppLayout>;
+  if (!user) return <AppLayout><GuestGate message="Sign in to list a product for sale." /></AppLayout>;
 
   return (
     <AppLayout>
@@ -185,8 +209,39 @@ function Sell() {
           </select>
         </Field>
 
-        <Field label="Location">
-          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Nairobi, Kenya" className="input" />
+        <div className={`rounded-lg border p-3 ${geoConfirmed ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-card"}`}>
+          <p className="mb-1 text-sm font-medium">Verify product location <span className="text-primary">*</span></p>
+          <p className="mb-2 text-xs text-muted-foreground">
+            We auto-fill country &amp; city from your device location to keep listings accurate.
+          </p>
+          <button
+            type="button"
+            onClick={detectLocation}
+            disabled={geoBusy}
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {geoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+            {geoConfirmed ? "Re-detect location" : "Use my current location"}
+          </button>
+        </div>
+
+        <Field label="Country">
+          <select value={country} onChange={(e) => setCountry(e.target.value)} className="input" disabled={!geoConfirmed} required>
+            <option value="">Select country</option>
+            {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {country && !COUNTRIES.includes(country) && <option value={country}>{country}</option>}
+          </select>
+        </Field>
+
+        <Field label="City / area">
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="e.g. Nairobi"
+            className="input"
+            disabled={!geoConfirmed}
+            required
+          />
         </Field>
 
         <label className="flex items-center justify-between rounded-lg border border-border bg-card p-3">

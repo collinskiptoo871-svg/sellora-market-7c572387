@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { COUNTRIES } from "@/lib/countries";
-import { Camera } from "lucide-react";
+import { describeGeoError, requestGeolocation } from "@/lib/geo";
+import { Camera, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding")({
@@ -22,6 +23,25 @@ function Onboarding() {
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
   const [busy, setBusy] = useState(false);
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [geoConfirmed, setGeoConfirmed] = useState(false);
+
+  const detectLocation = async () => {
+    setGeoBusy(true);
+    try {
+      const g = await requestGeolocation();
+      // Match detected country to our list (best-effort; fall back to raw)
+      const match = COUNTRIES.find((c) => c.toLowerCase() === g.country.toLowerCase()) || g.country;
+      setCountry(match);
+      setLocation(g.city || "");
+      setGeoConfirmed(true);
+      toast.success(`Location set: ${g.city ? g.city + ", " : ""}${match}`);
+    } catch (e) {
+      toast.error(describeGeoError(e));
+    } finally {
+      setGeoBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -48,6 +68,10 @@ function Onboarding() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!geoConfirmed) {
+      toast.error("Please tap 'Use my current location' to verify your country & city");
+      return;
+    }
     setBusy(true);
     try {
       let avatar_url: string | null = preview;
@@ -112,17 +136,41 @@ function Onboarding() {
           />
         </Field>
 
+        <div className={`rounded-lg border p-3 ${geoConfirmed ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-card"}`}>
+          <p className="mb-1 text-sm font-medium">Verify your location <span className="text-primary">*</span></p>
+          <p className="mb-2 text-xs text-muted-foreground">
+            We use your device location to auto-fill country &amp; city. Required to keep the marketplace safe.
+          </p>
+          <button
+            type="button"
+            onClick={detectLocation}
+            disabled={geoBusy}
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {geoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+            {geoConfirmed ? "Re-detect my location" : "Use my current location"}
+          </button>
+        </div>
+
         <Field label="Country" required>
-          <select value={country} onChange={(e) => setCountry(e.target.value)} required className="input">
+          <select value={country} onChange={(e) => setCountry(e.target.value)} required className="input" disabled={!geoConfirmed}>
             <option value="">Select country</option>
             {COUNTRIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
+            {country && !COUNTRIES.includes(country) && <option value={country}>{country}</option>}
           </select>
         </Field>
 
-        <Field label="Location (city / area)">
-          <input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={100} className="input" />
+        <Field label="Location (city / area)" required>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            maxLength={100}
+            required
+            disabled={!geoConfirmed}
+            className="input"
+          />
         </Field>
 
         <Field label="Bio">

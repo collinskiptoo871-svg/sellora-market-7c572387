@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
+import { GuestGate } from "@/components/GuestGate";
+import { useAuth } from "@/hooks/use-auth";
 import { MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/inbox")({
@@ -8,6 +10,10 @@ export const Route = createFileRoute("/inbox")({
 });
 
 function Inbox() {
+  const { user, loading } = useAuth();
+  if (loading) return <AppLayout><p className="text-sm text-muted-foreground">Loading…</p></AppLayout>;
+  if (!user) return <AppLayout><GuestGate message="Sign in to message buyers and sellers." /></AppLayout>;
+
   return (
     <AppLayout>
       <h1 className="mb-3 text-xl font-bold">Inbox</h1>
