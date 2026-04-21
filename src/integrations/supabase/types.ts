@@ -139,6 +139,87 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_orders: {
+        Row: {
+          amount: number
+          confirmation_code: string | null
+          created_at: string
+          currency: string
+          description: string
+          id: string
+          merchant_reference: string
+          metadata: Json
+          payment_method: string | null
+          pesapal_tracking_id: string | null
+          purpose: Database["public"]["Enums"]["payment_purpose"]
+          raw_status_response: Json | null
+          redirect_url: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          confirmation_code?: string | null
+          created_at?: string
+          currency?: string
+          description: string
+          id?: string
+          merchant_reference: string
+          metadata?: Json
+          payment_method?: string | null
+          pesapal_tracking_id?: string | null
+          purpose?: Database["public"]["Enums"]["payment_purpose"]
+          raw_status_response?: Json | null
+          redirect_url?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          confirmation_code?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          merchant_reference?: string
+          metadata?: Json
+          payment_method?: string | null
+          pesapal_tracking_id?: string | null
+          purpose?: Database["public"]["Enums"]["payment_purpose"]
+          raw_status_response?: Json | null
+          redirect_url?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pesapal_config: {
+        Row: {
+          environment: string
+          id: number
+          ipn_id: string | null
+          ipn_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          environment?: string
+          id?: number
+          ipn_id?: string | null
+          ipn_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          environment?: string
+          id?: number
+          ipn_id?: string | null
+          ipn_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           boosted: boolean
@@ -385,6 +466,17 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       notification_category: "messages" | "product" | "account" | "promotions"
+      payment_purpose:
+        | "boost_product"
+        | "verification"
+        | "subscription"
+        | "other"
+      payment_status:
+        | "pending"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "reversed"
       product_condition: "new" | "like_new" | "used" | "refurbished"
       product_status: "active" | "archived" | "sold" | "deleted"
       report_reason:
@@ -522,6 +614,19 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       notification_category: ["messages", "product", "account", "promotions"],
+      payment_purpose: [
+        "boost_product",
+        "verification",
+        "subscription",
+        "other",
+      ],
+      payment_status: [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled",
+        "reversed",
+      ],
       product_condition: ["new", "like_new", "used", "refurbished"],
       product_status: ["active", "archived", "sold", "deleted"],
       report_reason: [
