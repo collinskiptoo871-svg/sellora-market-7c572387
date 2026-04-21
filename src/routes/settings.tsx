@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
-import { ArrowLeft, BadgeCheck, Bell, ChevronRight, FileText, Gift, Lock, ScrollText, ShieldAlert, ShieldCheck, Store, TriangleAlert, UserPen, Wallet } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Bell, ChevronRight, CreditCard, FileText, Gift, Globe, HelpCircle, Languages, LogOut, Moon, Lock, MessageSquare, ScrollText, ShieldAlert, ShieldCheck, Star, Store, TriangleAlert, UserPen, Wallet } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Sellora" }] }),
@@ -24,8 +25,26 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     title: "SELLING",
     items: [
       { label: "Start Selling", sub: "List your first product!", Icon: Store, to: "/sell" },
-      { label: "Payment Settings", Icon: Wallet },
-      { label: "Verification & Boost", Icon: ShieldCheck },
+      { label: "Payments & Boosts", sub: "Pay via M-Pesa, card, or bank", Icon: CreditCard, to: "/payments" },
+      { label: "Payment Settings", sub: "Payout method & history", Icon: Wallet, to: "/payments" },
+      { label: "Verification & Boost", sub: "Get verified, boost listings", Icon: ShieldCheck, to: "/payments" },
+    ],
+  },
+  {
+    title: "PREFERENCES",
+    items: [
+      { label: "Language", sub: "English", Icon: Languages },
+      { label: "Region & Currency", sub: "Kenya (KES)", Icon: Globe },
+      { label: "Appearance", sub: "Light / Dark / System", Icon: Moon },
+      { label: "Saved Searches", Icon: Star },
+    ],
+  },
+  {
+    title: "SUPPORT",
+    items: [
+      { label: "Help Center", Icon: HelpCircle },
+      { label: "Contact Support", Icon: MessageSquare },
+      { label: "Rate Sellora", Icon: Star },
     ],
   },
   {
