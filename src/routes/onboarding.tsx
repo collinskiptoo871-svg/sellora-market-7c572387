@@ -23,6 +23,25 @@ function Onboarding() {
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
   const [busy, setBusy] = useState(false);
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [geoConfirmed, setGeoConfirmed] = useState(false);
+
+  const detectLocation = async () => {
+    setGeoBusy(true);
+    try {
+      const g = await requestGeolocation();
+      // Match detected country to our list (best-effort; fall back to raw)
+      const match = COUNTRIES.find((c) => c.toLowerCase() === g.country.toLowerCase()) || g.country;
+      setCountry(match);
+      setLocation(g.city || "");
+      setGeoConfirmed(true);
+      toast.success(`Location set: ${g.city ? g.city + ", " : ""}${match}`);
+    } catch (e) {
+      toast.error(describeGeoError(e));
+    } finally {
+      setGeoBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
