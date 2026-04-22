@@ -106,6 +106,44 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          product_id: string | null
+          read: boolean
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          read?: boolean
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          read?: boolean
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -426,6 +464,45 @@ export type Database = {
           rating?: number
           reviewer_id?: string
           seller_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          allow_messages: boolean
+          created_at: string
+          language: string
+          read_receipts: boolean
+          region: string
+          show_location: boolean
+          show_online: boolean
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_messages?: boolean
+          created_at?: string
+          language?: string
+          read_receipts?: boolean
+          region?: string
+          show_location?: boolean
+          show_online?: boolean
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_messages?: boolean
+          created_at?: string
+          language?: string
+          read_receipts?: boolean
+          region?: string
+          show_location?: boolean
+          show_online?: boolean
+          theme?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
