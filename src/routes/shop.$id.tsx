@@ -24,19 +24,37 @@ interface Profile {
   avg_response_minutes: number;
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  reviewer_id: string;
+  reviewer_name?: string | null;
+  reviewer_avatar?: string | null;
+}
+
 function Shop() {
   const { id } = Route.useParams();
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [products, setProducts] = useState<ProductCardData[]>([]);
-  const [reviews, setReviews] = useState<{ rating: number }[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
     supabase.from("profiles").select("*").eq("user_id", id).maybeSingle().then(({ data }) => setProfile(data as Profile | null));
     supabase.from("products").select("id,title,price,currency,location,photos,views,seller_id").eq("seller_id", id).eq("status", "active")
       .then(({ data }) => setProducts((data as ProductCardData[]) ?? []));
-    supabase.from("reviews").select("rating").eq("seller_id", id)
-      .then(({ data }) => setReviews(data ?? []));
+    supabase.from("reviews").select("id,rating,comment,created_at,reviewer_id").eq("seller_id", id).order("created_at", { ascending: false })
+      .then(async ({ data }) => {
+        const list = (data as Review[]) ?? [];
+        if (list.length) {
+          const ids = Array.from(new Set(list.map((r) => r.reviewer_id)));
+          const { data: profs } = await supabase.from("profiles").select("user_id,display_name,avatar_url").in("user_id", ids);
+          const m = new Map((profs ?? []).map((p) => [p.user_id, p]));
+          setReviews(list.map((r) => ({ ...r, reviewer_name: m.get(r.reviewer_id)?.display_name ?? null, reviewer_avatar: m.get(r.reviewer_id)?.avatar_url ?? null })));
+        } else setReviews([]);
+      });
   }, [id]);
 
   const blockSeller = async () => {
