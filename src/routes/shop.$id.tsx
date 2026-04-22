@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { ProductCard, type ProductCardData } from "@/components/ProductCard";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BadgeCheck, MapPin, Star, UserX } from "lucide-react";
 import { toast } from "sonner";
 
@@ -115,6 +116,35 @@ function Shop() {
           ))}
         </div>
       </section>
+
+      {reviews.length > 0 && (
+        <section className="mt-4">
+          <h2 className="mb-2 text-lg font-bold">Reviews</h2>
+          <ul className="space-y-2">
+            {reviews.slice(0, 10).map((r) => {
+              const initial = (r.reviewer_name || "U").charAt(0).toUpperCase();
+              return (
+                <li key={r.id} className="rounded-lg border border-border bg-card p-3">
+                  <div className="mb-1 flex items-center gap-2">
+                    <Avatar className="h-7 w-7">
+                      <AvatarImage src={r.reviewer_avatar ?? undefined} className="h-7 w-7 rounded-full object-cover" />
+                      <AvatarFallback className="text-[10px]">{initial}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{r.reviewer_name ?? "Anonymous"}</span>
+                    <div className="ml-auto flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} className={`h-3.5 w-3.5 ${n <= r.rating ? "fill-warning text-warning" : "text-muted-foreground/40"}`} />
+                      ))}
+                    </div>
+                  </div>
+                  {r.comment && <p className="text-sm text-muted-foreground">{r.comment}</p>}
+                  <p className="mt-1 text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {user && user.id !== id && (
         <button onClick={blockSeller} className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-destructive/30 py-2 text-sm font-medium text-destructive">
