@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
           // Build callback + IPN URLs from request origin
           const origin = new URL(request.url).origin;
           const callbackUrl = `${origin}/payment/return`;
-          const ipnUrl = `${origin}/api/pesapal/ipn`;
+          const ipnUrl = `${origin}/api/public/pesapal/ipn`;
 
           let ipnId: string;
           try {
