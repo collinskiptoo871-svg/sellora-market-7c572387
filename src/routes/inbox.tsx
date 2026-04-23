@@ -120,6 +120,7 @@ function Inbox() {
           </p>
           <Link
             to="/search"
+            search={{ q: "" }}
             className="mt-4 rounded-md bg-[image:var(--gradient-primary)] px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             Browse products
