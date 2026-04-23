@@ -357,7 +357,7 @@ function TierCard({ tier, loading, onPay, disabled }: { tier: Tier; loading: boo
         ))}
       </ul>
       <button
-        disabled={loading}
+        disabled={loading || disabled}
         onClick={onPay}
         className="flex h-10 w-full items-center justify-center gap-1 rounded-md bg-[image:var(--gradient-primary)] text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
