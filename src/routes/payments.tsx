@@ -155,6 +155,9 @@ function Payments() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [tab, setTab] = useState<"boost" | "verify">("boost");
+  const [profile, setProfile] = useState<{ display_name: string | null; country: string | null } | null>(null);
+  const [products, setProducts] = useState<{ id: string; title: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -168,10 +171,34 @@ function Payments() {
       .order("created_at", { ascending: false })
       .limit(20)
       .then(({ data }) => setOrders((data as Order[]) || []));
+    supabase
+      .from("profiles")
+      .select("display_name,country")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfile(data ?? null));
+    supabase
+      .from("products")
+      .select("id,title")
+      .eq("seller_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setProducts((data as { id: string; title: string }[]) ?? []));
   }, [user]);
+
+  const profileComplete = !!profile?.display_name && !!profile?.country;
 
   const pay = async (tier: Tier) => {
     if (!user) return;
+    if (!profileComplete) {
+      toast.error("Complete your profile first (name + verified location).");
+      navigate({ to: "/onboarding" });
+      return;
+    }
+    if (tier.purpose === "boost_product" && !selectedProductId) {
+      toast.error("Choose which product to boost first.");
+      return;
+    }
     setBusy(tier.id);
     try {
       const { redirect_url } = await initiatePesapalPayment({
@@ -179,7 +206,11 @@ function Payments() {
         currency: "KES",
         description: `Sellora — ${tier.name}`,
         purpose: tier.purpose,
-        metadata: { tier_id: tier.id, tier_name: tier.name },
+        metadata: {
+          tier_id: tier.id,
+          tier_name: tier.name,
+          ...(tier.purpose === "boost_product" ? { product_id: selectedProductId } : {}),
+        },
         email: user.email || undefined,
       });
       window.location.href = redirect_url;
