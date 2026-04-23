@@ -165,12 +165,23 @@ function ProductPage() {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <button
-          onClick={messageSeller}
-          className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] font-semibold text-primary-foreground"
-        >
-          <MessageSquare className="h-5 w-5" /> Message Seller
-        </button>
+        {user && user.id !== p.seller_id ? (
+          <Link
+            to="/inbox/$userId"
+            params={{ userId: p.seller_id }}
+            search={{ product: p.id }}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] font-semibold text-primary-foreground"
+          >
+            <MessageSquare className="h-5 w-5" /> Message Seller
+          </Link>
+        ) : (
+          <button
+            onClick={messageSeller}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] font-semibold text-primary-foreground"
+          >
+            <MessageSquare className="h-5 w-5" /> Message Seller
+          </button>
+        )}
         <button onClick={toggleSave} aria-label={saved ? "Unsave" : "Save"} className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-card">
           <Heart className={`h-5 w-5 ${saved ? "fill-primary text-primary" : ""}`} />
         </button>

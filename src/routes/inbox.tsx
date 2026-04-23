@@ -115,7 +115,19 @@ function Inbox() {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-10 text-center">
           <MessageSquare className="mb-3 h-10 w-10 text-muted-foreground" />
           <p className="font-medium">No messages yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">When buyers message you about a product, conversations appear here.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            When buyers message you about a product, conversations appear here.
+          </p>
+          <Link
+            to="/search"
+            search={{ q: "" }}
+            className="mt-4 rounded-md bg-[image:var(--gradient-primary)] px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Browse products
+          </Link>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Tip: open any product and tap <strong>Message Seller</strong> to start a chat.
+          </p>
         </div>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
