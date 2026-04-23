@@ -1,7 +1,7 @@
 // Server-only Pesapal helper. NEVER import from client code.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const PESAPAL_ENV = (process.env.PESAPAL_ENV || "sandbox").toLowerCase();
+const PESAPAL_ENV = (process.env.PESAPAL_ENV || "live").toLowerCase();
 export const PESAPAL_BASE =
   PESAPAL_ENV === "live"
     ? "https://pay.pesapal.com/v3"
@@ -53,19 +53,20 @@ export async function ensureIpn(notificationUrl: string): Promise<string> {
     },
     body: JSON.stringify({ url: notificationUrl, ipn_notification_type: "GET" }),
   });
-  const data = (await res.json()) as { ipn_id?: string; error?: unknown };
-  if (!res.ok || !data.ipn_id) {
+  const data = (await res.json()) as { ipn_id?: string; IPN_ID?: string; ipnId?: string; error?: unknown };
+  const ipnId = data.ipn_id || data.IPN_ID || data.ipnId;
+  if (!res.ok || !ipnId) {
     throw new Error(`Pesapal IPN register failed: ${JSON.stringify(data)}`);
   }
 
   await supabaseAdmin.from("pesapal_config").upsert({
     id: 1,
-    ipn_id: data.ipn_id,
+    ipn_id: ipnId,
     ipn_url: notificationUrl,
     environment: PESAPAL_ENV,
   });
 
-  return data.ipn_id;
+  return ipnId;
 }
 
 export interface PesapalStatusResponse {
