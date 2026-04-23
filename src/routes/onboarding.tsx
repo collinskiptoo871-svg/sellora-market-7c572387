@@ -1,10 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { describeGeoError, requestGeolocation } from "@/lib/geo";
 import { ArrowLeft, Camera, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
+
+const ProfileSchema = z.object({
+  display_name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
+  country: z.string().trim().min(1, "Country is required"),
+  location: z.string().trim().max(100).optional().default(""),
+  bio: z.string().trim().max(300).optional().default(""),
+});
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Edit profile — Sellora" }] }),
@@ -65,7 +73,15 @@ function Onboarding() {
     e.preventDefault();
     if (!user) return;
     if (!geoConfirmed || !country) return toast.error("Please tap 'Use my current location' to verify your country");
-    if (!name.trim()) return toast.error("Your name is required");
+    const parsed = ProfileSchema.safeParse({
+      display_name: name,
+      country,
+      location,
+      bio,
+    });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0]?.message ?? "Please check your inputs");
+    }
     setBusy(true);
     try {
       let avatar_url: string | null = preview;
@@ -78,7 +94,14 @@ function Onboarding() {
       const { error } = await supabase
         .from("profiles")
         .upsert(
-          { user_id: user.id, display_name: name.trim(), country, location: location.trim(), bio, avatar_url },
+          {
+            user_id: user.id,
+            display_name: parsed.data.display_name,
+            country: parsed.data.country,
+            location: parsed.data.location,
+            bio: parsed.data.bio,
+            avatar_url,
+          },
           { onConflict: "user_id" }
         );
       if (error) throw error;

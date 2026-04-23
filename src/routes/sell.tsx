@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { z } from "zod";
 import { AppLayout } from "@/components/AppLayout";
 import { GuestGate } from "@/components/GuestGate";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,13 @@ import { CATEGORIES } from "@/lib/countries";
 import { describeGeoError, requestGeolocation } from "@/lib/geo";
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, Loader2, MapPin, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+
+const SellSchema = z.object({
+  title: z.string().trim().min(3, "Title must be at least 3 characters").max(120),
+  price: z.coerce.number().positive("Price must be greater than 0").max(10_000_000, "Price is too large"),
+  description: z.string().trim().max(1000).optional().default(""),
+  category: z.string().trim().min(1).max(80),
+});
 
 export const Route = createFileRoute("/sell")({
   head: () => ({ meta: [{ title: "Sell a product — Sellora" }] }),
@@ -68,7 +76,16 @@ function Sell() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!title.trim() || !price) return toast.error("Title and price are required");
+    const parsed = SellSchema.safeParse({
+      title,
+      price,
+      description,
+      category,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Please check your inputs");
+      return;
+    }
     if (photos.length === 0) return toast.error("At least one photo is required");
 
     // Always re-verify GPS before posting — never trust stale state
@@ -97,11 +114,11 @@ function Sell() {
       }
       const { error } = await supabase.from("products").insert({
         seller_id: user.id,
-        title: title.trim(),
-        price: Number(price),
-        description: description.trim(),
+        title: parsed.data.title,
+        price: parsed.data.price,
+        description: parsed.data.description,
         condition,
-        category,
+        category: parsed.data.category,
         location: `${verifiedCity || "—"}, ${verifiedCountry}`,
         shipping_available: shipping,
         photos: photoUrls,

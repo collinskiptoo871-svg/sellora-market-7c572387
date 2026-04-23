@@ -155,6 +155,9 @@ function Payments() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [tab, setTab] = useState<"boost" | "verify">("boost");
+  const [profile, setProfile] = useState<{ display_name: string | null; country: string | null } | null>(null);
+  const [products, setProducts] = useState<{ id: string; title: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -168,10 +171,34 @@ function Payments() {
       .order("created_at", { ascending: false })
       .limit(20)
       .then(({ data }) => setOrders((data as Order[]) || []));
+    supabase
+      .from("profiles")
+      .select("display_name,country")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfile(data ?? null));
+    supabase
+      .from("products")
+      .select("id,title")
+      .eq("seller_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setProducts((data as { id: string; title: string }[]) ?? []));
   }, [user]);
+
+  const profileComplete = !!profile?.display_name && !!profile?.country;
 
   const pay = async (tier: Tier) => {
     if (!user) return;
+    if (!profileComplete) {
+      toast.error("Complete your profile first (name + verified location).");
+      navigate({ to: "/onboarding" });
+      return;
+    }
+    if (tier.purpose === "boost_product" && !selectedProductId) {
+      toast.error("Choose which product to boost first.");
+      return;
+    }
     setBusy(tier.id);
     try {
       const { redirect_url } = await initiatePesapalPayment({
@@ -179,7 +206,11 @@ function Payments() {
         currency: "KES",
         description: `Sellora — ${tier.name}`,
         purpose: tier.purpose,
-        metadata: { tier_id: tier.id, tier_name: tier.name },
+        metadata: {
+          tier_id: tier.id,
+          tier_name: tier.name,
+          ...(tier.purpose === "boost_product" ? { product_id: selectedProductId } : {}),
+        },
         email: user.email || undefined,
       });
       window.location.href = redirect_url;
@@ -216,9 +247,54 @@ function Payments() {
         </button>
       </div>
 
+      {!profileComplete && (
+        <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+          <p className="font-semibold">Complete your profile first</p>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Sellora requires your name and a GPS-verified country before any payment can be made.
+          </p>
+          <button
+            onClick={() => navigate({ to: "/onboarding" })}
+            className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+          >
+            Complete profile
+          </button>
+        </div>
+      )}
+
+      {tab === "boost" && profileComplete && (
+        <div className="mb-4 rounded-lg border border-border bg-card p-3">
+          <p className="mb-1 text-sm font-semibold">Choose product to boost <span className="text-primary">*</span></p>
+          {products.length === 0 ? (
+            <div className="text-xs text-muted-foreground">
+              You have no active products yet.{" "}
+              <Link to="/sell" className="text-primary underline">List one first</Link>.
+            </div>
+          ) : (
+            <select
+              value={selectedProductId}
+              onChange={(e) => setSelectedProductId(e.target.value)}
+              className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
+              required
+            >
+              <option value="">— Select a product —</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>{p.title}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
       <div className="space-y-3">
         {tiers.map((t) => (
-          <TierCard key={t.id} tier={t} loading={busy === t.id} onPay={() => pay(t)} />
+          <TierCard
+            key={t.id}
+            tier={t}
+            loading={busy === t.id}
+            disabled={!profileComplete || (t.purpose === "boost_product" && (products.length === 0 || !selectedProductId))}
+            onPay={() => pay(t)}
+          />
         ))}
       </div>
 
@@ -253,7 +329,7 @@ function Payments() {
   );
 }
 
-function TierCard({ tier, loading, onPay }: { tier: Tier; loading: boolean; onPay: () => void }) {
+function TierCard({ tier, loading, onPay, disabled }: { tier: Tier; loading: boolean; onPay: () => void; disabled?: boolean }) {
   return (
     <div className={`rounded-lg border bg-card p-4 ${tier.highlight ? "border-primary shadow-[var(--shadow-elegant)]" : "border-border"}`}>
       <div className="mb-2 flex items-start justify-between gap-3">
@@ -281,7 +357,7 @@ function TierCard({ tier, loading, onPay }: { tier: Tier; loading: boolean; onPa
         ))}
       </ul>
       <button
-        disabled={loading}
+        disabled={loading || disabled}
         onClick={onPay}
         className="flex h-10 w-full items-center justify-center gap-1 rounded-md bg-[image:var(--gradient-primary)] text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >

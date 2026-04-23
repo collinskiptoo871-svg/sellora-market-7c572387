@@ -43,7 +43,11 @@ function Chat() {
       .then(({ data }) => setOther(data ?? null));
     if (product) {
       supabase.from("products").select("id,title,price,currency,photos").eq("id", product).maybeSingle()
-        .then(({ data }) => setProductInfo(data ?? null));
+        .then(({ data }) => {
+          setProductInfo(data ?? null);
+          // Pre-fill shortcut message when arriving from a product page
+          setBody((prev) => prev || (data ? `Hi! Is "${data.title}" still available?` : prev));
+        });
     }
   }, [userId, product]);
 
@@ -103,7 +107,15 @@ function Chat() {
 
   const send = async () => {
     const text = body.trim();
-    if (!text || sending) return;
+    if (!text) {
+      toast.error("Please type a message before sending.");
+      return;
+    }
+    if (text.length > 2000) {
+      toast.error("Message is too long (max 2000 characters).");
+      return;
+    }
+    if (sending) return;
     if (user.id === userId) {
       toast.info("You can't message yourself");
       return;

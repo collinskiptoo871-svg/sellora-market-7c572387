@@ -17,14 +17,29 @@ export async function initiatePesapalPayment(input: InitiatePaymentInput) {
   const token = sess.session?.access_token;
   if (!token) throw new Error("You must be signed in to pay");
 
-  const res = await fetch("/api/pesapal/initiate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(input),
-  });
-  const data = (await res.json()) as { redirect_url?: string; order_tracking_id?: string; merchant_reference?: string; error?: string };
+  let res: Response;
+  try {
+    res = await fetch("/api/pesapal/initiate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(input),
+    });
+  } catch {
+    throw new Error("Network error — check your connection and try again.");
+  }
+
+  let data: { redirect_url?: string; order_tracking_id?: string; merchant_reference?: string; error?: string; details?: unknown } = {};
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Payment service unavailable (HTTP ${res.status}). Please try again shortly.`);
+  }
+
   if (!res.ok || !data.redirect_url) {
-    throw new Error(data.error || "Failed to start payment");
+    const detail = typeof data.details === "object" && data.details
+      ? ` (${JSON.stringify(data.details).slice(0, 200)})`
+      : "";
+    throw new Error((data.error || `Failed to start payment (HTTP ${res.status})`) + detail);
   }
   return data as { redirect_url: string; order_tracking_id: string; merchant_reference: string };
 }

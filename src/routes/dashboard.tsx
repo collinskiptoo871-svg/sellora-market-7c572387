@@ -32,8 +32,18 @@ function Dashboard() {
     if (!loading && !user) navigate({ to: "/auth" });
     if (!user) return;
     (async () => {
-      const { data: prof } = await supabase.from("profiles").select("display_name,avatar_url,location,verified").eq("user_id", user.id).maybeSingle();
-      setProfile(prof ?? null);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("display_name,avatar_url,location,verified,country")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      // Force completion of profile (name + GPS country) before using the app
+      if (!prof?.display_name || !prof?.country) {
+        toast.info("Please complete your profile to continue.");
+        navigate({ to: "/onboarding" });
+        return;
+      }
+      setProfile(prof);
       const { data: prods } = await supabase
         .from("products")
         .select("id,title,price,currency,photos,views,status,created_at")
@@ -53,15 +63,29 @@ function Dashboard() {
   }, [user, loading, navigate]);
 
   const updateStatus = async (id: string, status: "active" | "archived" | "sold" | "deleted") => {
+    if (!user) return;
     const patch = status === "deleted"
       ? { status, deleted_at: new Date().toISOString() }
       : { status };
-    const { error } = await supabase.from("products").update(patch).eq("id", id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(`Product ${status}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id || status !== "deleted").map((p) => (p.id === id ? { ...p, status } : p)));
+    const { error } = await supabase
+      .from("products")
+      .update(patch)
+      .eq("id", id)
+      .eq("seller_id", user.id);
+    if (error) {
+      toast.error(error.message);
+      return;
     }
+    toast.success(`Product ${status}`);
+    setProducts((prev) =>
+      status === "deleted"
+        ? prev.filter((p) => p.id !== id)
+        : prev.map((p) => (p.id === id ? { ...p, status } : p))
+    );
+    setCounts((c) => ({
+      ...c,
+      active: status === "active" ? c.active + 1 : c.active,
+    }));
   };
 
   return (
@@ -140,8 +164,8 @@ function Dashboard() {
               <p className="flex items-center gap-1 text-xs text-muted-foreground"><Eye className="h-3 w-3" /> {p.views} • <span className="capitalize">{p.status}</span></p>
             </div>
             <div className="flex flex-col gap-1">
-              <Link to="/product/$id" params={{ id: p.id }} className="rounded-md bg-primary-soft px-3 py-1 text-xs font-medium text-accent-foreground">Edit</Link>
-              <button onClick={() => updateStatus(p.id, "sold")} className="rounded-md bg-warning/30 px-3 py-1 text-xs font-medium">Sold Out</button>
+              <Link to="/product/$id/edit" params={{ id: p.id }} className="rounded-md bg-primary-soft px-3 py-1 text-center text-xs font-medium text-accent-foreground">Edit</Link>
+              <button type="button" onClick={() => updateStatus(p.id, "sold")} className="rounded-md bg-warning/30 px-3 py-1 text-xs font-medium">Sold Out</button>
               <button onClick={() => updateStatus(p.id, "archived")} className="rounded-md bg-secondary px-3 py-1 text-xs font-medium">Archive</button>
               <button onClick={() => updateStatus(p.id, "deleted")} className="rounded-md bg-destructive/20 px-3 py-1 text-xs font-medium text-destructive">Delete</button>
             </div>
