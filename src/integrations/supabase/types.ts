@@ -320,6 +320,8 @@ export type Database = {
       }
       products: {
         Row: {
+          boost_expires_at: string | null
+          boost_tier: string | null
           boosted: boolean
           category: string
           condition: Database["public"]["Enums"]["product_condition"]
@@ -339,6 +341,8 @@ export type Database = {
           views: number
         }
         Insert: {
+          boost_expires_at?: string | null
+          boost_tier?: string | null
           boosted?: boolean
           category: string
           condition?: Database["public"]["Enums"]["product_condition"]
@@ -358,6 +362,8 @@ export type Database = {
           views?: number
         }
         Update: {
+          boost_expires_at?: string | null
+          boost_tier?: string | null
           boosted?: boolean
           category?: string
           condition?: Database["public"]["Enums"]["product_condition"]
@@ -395,6 +401,8 @@ export type Database = {
           updated_at: string
           user_id: string
           verified: boolean
+          verified_at: string | null
+          verified_tier: string | null
           warning_level: string
         }
         Insert: {
@@ -413,6 +421,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           verified?: boolean
+          verified_at?: string | null
+          verified_tier?: string | null
           warning_level?: string
         }
         Update: {
@@ -431,6 +441,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verified?: boolean
+          verified_at?: string | null
+          verified_tier?: string | null
           warning_level?: string
         }
         Relationships: []
