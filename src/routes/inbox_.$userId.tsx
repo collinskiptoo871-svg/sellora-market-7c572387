@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/inbox/$userId")({
+export const Route = createFileRoute("/inbox_/$userId")({
   validateSearch: (s: Record<string, unknown>) => ({
     product: typeof s.product === "string" ? s.product : undefined,
   }),
