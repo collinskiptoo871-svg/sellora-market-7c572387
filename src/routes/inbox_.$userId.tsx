@@ -522,32 +522,49 @@ function Chat() {
                     key={m.id}
                     className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
                       mine
-                        ? "ml-auto rounded-br-sm bg-primary text-primary-foreground"
-                        : "mr-auto rounded-bl-sm bg-card"
+                        ? "mr-auto rounded-bl-sm bg-primary text-primary-foreground"
+                        : "ml-auto rounded-br-sm bg-card"
                     }`}
                   >
                     {m.kind === "location" && m.latitude != null && m.longitude != null ? (
-                      <a
-                        href={`https://www.google.com/maps?q=${m.latitude},${m.longitude}`}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="block"
-                      >
-                        <div className="mb-1 overflow-hidden rounded-lg">
-                          <img
-                            src={`https://staticmap.openstreetmap.de/staticmap.php?center=${m.latitude},${m.longitude}&zoom=15&size=260x140&markers=${m.latitude},${m.longitude},red-pushpin`}
-                            alt="Shared location"
-                            className="h-32 w-[260px] max-w-full object-cover"
-                            onError={(e) => ((e.currentTarget.style.display = "none"))}
-                          />
-                        </div>
-                        <p className="flex items-center gap-1 text-xs font-medium">
-                          <MapPin className="h-3.5 w-3.5" /> View location on map
-                        </p>
-                        <p className={`text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                          {m.latitude.toFixed(5)}, {m.longitude.toFixed(5)}
-                        </p>
-                      </a>
+                      (() => {
+                        const lat = m.latitude;
+                        const lng = m.longitude;
+                        const d = 0.01;
+                        const bbox = `${lng - d},${lat - d},${lng + d},${lat + d}`;
+                        const embed = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+                        const open = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
+                        return (
+                          <div className="space-y-1">
+                            <div className="overflow-hidden rounded-lg border border-border/40 bg-muted">
+                              <iframe
+                                title="Shared location map"
+                                src={embed}
+                                className="block h-40 w-[260px] max-w-full"
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                              />
+                            </div>
+                            <a
+                              href={open}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className={`flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline ${
+                                mine ? "text-primary-foreground" : "text-primary"
+                              }`}
+                            >
+                              <MapPin className="h-3.5 w-3.5" /> Open in maps
+                            </a>
+                            <p
+                              className={`text-[10px] ${
+                                mine ? "text-primary-foreground/70" : "text-muted-foreground"
+                              }`}
+                            >
+                              {lat.toFixed(5)}, {lng.toFixed(5)}
+                            </p>
+                          </div>
+                        );
+                      })()
                     ) : (
                       <p className="whitespace-pre-line break-words">{m.body}</p>
                     )}
