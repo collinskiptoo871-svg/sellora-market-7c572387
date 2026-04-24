@@ -155,28 +155,43 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          delivered_at: string | null
           id: string
+          kind: string
+          latitude: number | null
+          longitude: number | null
           product_id: string | null
           read: boolean
           recipient_id: string
+          seen_at: string | null
           sender_id: string
         }
         Insert: {
           body: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
+          kind?: string
+          latitude?: number | null
+          longitude?: number | null
           product_id?: string | null
           read?: boolean
           recipient_id: string
+          seen_at?: string | null
           sender_id: string
         }
         Update: {
           body?: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
+          kind?: string
+          latitude?: number | null
+          longitude?: number | null
           product_id?: string | null
           read?: boolean
           recipient_id?: string
+          seen_at?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -509,6 +524,27 @@ export type Database = {
           rating?: number
           reviewer_id?: string
           seller_id?: string
+        }
+        Relationships: []
+      }
+      typing_status: {
+        Row: {
+          is_typing: boolean
+          peer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          is_typing?: boolean
+          peer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          is_typing?: boolean
+          peer_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
