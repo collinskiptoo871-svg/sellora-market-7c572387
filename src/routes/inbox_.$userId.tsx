@@ -477,28 +477,34 @@ function Chat() {
         </DropdownMenu>
       </div>
 
-      {/* Pinned product context */}
+      {/* Pinned product context — visible only, never auto-sent. Tap "Ask about this" to prefill the composer. */}
       {productInfo && (
-        <Link
-          to="/product/$id"
-          params={{ id: productInfo.id }}
-          className="-mx-4 sticky top-[57px] z-10 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-2 backdrop-blur"
-        >
-          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
-            {productInfo.photos[0] && (
-              <img src={productInfo.photos[0]} alt="" className="h-full w-full object-cover" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-1 text-sm font-medium">{productInfo.title}</p>
-            <p className="text-xs font-bold text-primary">
-              {productInfo.currency} {productInfo.price.toLocaleString()}
-            </p>
-          </div>
-          <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
-            About this item
-          </span>
-        </Link>
+        <div className="-mx-4 sticky top-[57px] z-10 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
+          <Link
+            to="/product/$id"
+            params={{ id: productInfo.id }}
+            className="flex min-w-0 flex-1 items-center gap-3"
+          >
+            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
+              {productInfo.photos[0] && (
+                <img src={productInfo.photos[0]} alt="" className="h-full w-full object-cover" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-1 text-sm font-medium">{productInfo.title}</p>
+              <p className="text-xs font-bold text-primary">
+                {productInfo.currency} {productInfo.price.toLocaleString()}
+              </p>
+            </div>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setBody(`Hi! Is "${productInfo.title}" still available?`)}
+            className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
+          >
+            Ask about this
+          </button>
+        </div>
       )}
 
       {/* Messages — taller scroll area, closer to input */}
