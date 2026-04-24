@@ -33,7 +33,7 @@ import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as LegalDocRouteImport } from './routes/legal.$doc'
 import { Route as InboxUserIdRouteImport } from './routes/inbox.$userId'
-import { Route as ProductIdEditRouteImport } from './routes/product.$id.edit'
+import { Route as ProductIdEditRouteImport } from './routes/product.$id_.edit'
 import { Route as ApiPesapalStatusRouteImport } from './routes/api/pesapal.status'
 import { Route as ApiPesapalInitiateRouteImport } from './routes/api/pesapal.initiate'
 import { Route as ApiPublicPesapalIpnRouteImport } from './routes/api/public/pesapal.ipn'
@@ -159,9 +159,9 @@ const InboxUserIdRoute = InboxUserIdRouteImport.update({
   getParentRoute: () => InboxRoute,
 } as any)
 const ProductIdEditRoute = ProductIdEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ProductIdRoute,
+  id: '/product/$id_/edit',
+  path: '/product/$id/edit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPesapalStatusRoute = ApiPesapalStatusRouteImport.update({
   id: '/api/pesapal/status',
@@ -202,7 +202,7 @@ export interface FileRoutesByFullPath {
   '/inbox/$userId': typeof InboxUserIdRoute
   '/legal/$doc': typeof LegalDocRoute
   '/payment/return': typeof PaymentReturnRoute
-  '/product/$id': typeof ProductIdRouteWithChildren
+  '/product/$id': typeof ProductIdRoute
   '/shop/$id': typeof ShopIdRoute
   '/api/pesapal/initiate': typeof ApiPesapalInitiateRoute
   '/api/pesapal/status': typeof ApiPesapalStatusRoute
@@ -232,7 +232,7 @@ export interface FileRoutesByTo {
   '/inbox/$userId': typeof InboxUserIdRoute
   '/legal/$doc': typeof LegalDocRoute
   '/payment/return': typeof PaymentReturnRoute
-  '/product/$id': typeof ProductIdRouteWithChildren
+  '/product/$id': typeof ProductIdRoute
   '/shop/$id': typeof ShopIdRoute
   '/api/pesapal/initiate': typeof ApiPesapalInitiateRoute
   '/api/pesapal/status': typeof ApiPesapalStatusRoute
@@ -263,11 +263,11 @@ export interface FileRoutesById {
   '/inbox/$userId': typeof InboxUserIdRoute
   '/legal/$doc': typeof LegalDocRoute
   '/payment/return': typeof PaymentReturnRoute
-  '/product/$id': typeof ProductIdRouteWithChildren
+  '/product/$id': typeof ProductIdRoute
   '/shop/$id': typeof ShopIdRoute
   '/api/pesapal/initiate': typeof ApiPesapalInitiateRoute
   '/api/pesapal/status': typeof ApiPesapalStatusRoute
-  '/product/$id/edit': typeof ProductIdEditRoute
+  '/product/$id_/edit': typeof ProductIdEditRoute
   '/api/public/pesapal/ipn': typeof ApiPublicPesapalIpnRoute
 }
 export interface FileRouteTypes {
@@ -359,7 +359,7 @@ export interface FileRouteTypes {
     | '/shop/$id'
     | '/api/pesapal/initiate'
     | '/api/pesapal/status'
-    | '/product/$id/edit'
+    | '/product/$id_/edit'
     | '/api/public/pesapal/ipn'
   fileRoutesById: FileRoutesById
 }
@@ -385,10 +385,11 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   LegalDocRoute: typeof LegalDocRoute
   PaymentReturnRoute: typeof PaymentReturnRoute
-  ProductIdRoute: typeof ProductIdRouteWithChildren
+  ProductIdRoute: typeof ProductIdRoute
   ShopIdRoute: typeof ShopIdRoute
   ApiPesapalInitiateRoute: typeof ApiPesapalInitiateRoute
   ApiPesapalStatusRoute: typeof ApiPesapalStatusRoute
+  ProductIdEditRoute: typeof ProductIdEditRoute
   ApiPublicPesapalIpnRoute: typeof ApiPublicPesapalIpnRoute
 }
 
@@ -562,12 +563,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InboxUserIdRouteImport
       parentRoute: typeof InboxRoute
     }
-    '/product/$id/edit': {
-      id: '/product/$id/edit'
-      path: '/edit'
+    '/product/$id_/edit': {
+      id: '/product/$id_/edit'
+      path: '/product/$id/edit'
       fullPath: '/product/$id/edit'
       preLoaderRoute: typeof ProductIdEditRouteImport
-      parentRoute: typeof ProductIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/pesapal/status': {
       id: '/api/pesapal/status'
@@ -603,18 +604,6 @@ const InboxRouteChildren: InboxRouteChildren = {
 
 const InboxRouteWithChildren = InboxRoute._addFileChildren(InboxRouteChildren)
 
-interface ProductIdRouteChildren {
-  ProductIdEditRoute: typeof ProductIdEditRoute
-}
-
-const ProductIdRouteChildren: ProductIdRouteChildren = {
-  ProductIdEditRoute: ProductIdEditRoute,
-}
-
-const ProductIdRouteWithChildren = ProductIdRoute._addFileChildren(
-  ProductIdRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
@@ -637,10 +626,11 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   LegalDocRoute: LegalDocRoute,
   PaymentReturnRoute: PaymentReturnRoute,
-  ProductIdRoute: ProductIdRouteWithChildren,
+  ProductIdRoute: ProductIdRoute,
   ShopIdRoute: ShopIdRoute,
   ApiPesapalInitiateRoute: ApiPesapalInitiateRoute,
   ApiPesapalStatusRoute: ApiPesapalStatusRoute,
+  ProductIdEditRoute: ProductIdEditRoute,
   ApiPublicPesapalIpnRoute: ApiPublicPesapalIpnRoute,
 }
 export const routeTree = rootRouteImport
