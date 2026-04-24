@@ -32,7 +32,7 @@ import { Route as ShopIdRouteImport } from './routes/shop.$id'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as LegalDocRouteImport } from './routes/legal.$doc'
-import { Route as InboxUserIdRouteImport } from './routes/inbox.$userId'
+import { Route as InboxUserIdRouteImport } from './routes/inbox_.$userId'
 import { Route as ProductIdEditRouteImport } from './routes/product.$id_.edit'
 import { Route as ApiPesapalStatusRouteImport } from './routes/api/pesapal.status'
 import { Route as ApiPesapalInitiateRouteImport } from './routes/api/pesapal.initiate'
@@ -154,9 +154,9 @@ const LegalDocRoute = LegalDocRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxUserIdRoute = InboxUserIdRouteImport.update({
-  id: '/$userId',
-  path: '/$userId',
-  getParentRoute: () => InboxRoute,
+  id: '/inbox_/$userId',
+  path: '/inbox/$userId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProductIdEditRoute = ProductIdEditRouteImport.update({
   id: '/product/$id_/edit',
@@ -186,7 +186,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRoute
-  '/inbox': typeof InboxRouteWithChildren
+  '/inbox': typeof InboxRoute
   '/invite': typeof InviteRoute
   '/kyc': typeof KycRoute
   '/notifications': typeof NotificationsRoute
@@ -216,7 +216,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRoute
-  '/inbox': typeof InboxRouteWithChildren
+  '/inbox': typeof InboxRoute
   '/invite': typeof InviteRoute
   '/kyc': typeof KycRoute
   '/notifications': typeof NotificationsRoute
@@ -247,7 +247,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRoute
-  '/inbox': typeof InboxRouteWithChildren
+  '/inbox': typeof InboxRoute
   '/invite': typeof InviteRoute
   '/kyc': typeof KycRoute
   '/notifications': typeof NotificationsRoute
@@ -260,7 +260,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/sell': typeof SellRoute
   '/settings': typeof SettingsRoute
-  '/inbox/$userId': typeof InboxUserIdRoute
+  '/inbox_/$userId': typeof InboxUserIdRoute
   '/legal/$doc': typeof LegalDocRoute
   '/payment/return': typeof PaymentReturnRoute
   '/product/$id': typeof ProductIdRoute
@@ -352,7 +352,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/sell'
     | '/settings'
-    | '/inbox/$userId'
+    | '/inbox_/$userId'
     | '/legal/$doc'
     | '/payment/return'
     | '/product/$id'
@@ -370,7 +370,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   HelpRoute: typeof HelpRoute
-  InboxRoute: typeof InboxRouteWithChildren
+  InboxRoute: typeof InboxRoute
   InviteRoute: typeof InviteRoute
   KycRoute: typeof KycRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -383,6 +383,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SellRoute: typeof SellRoute
   SettingsRoute: typeof SettingsRoute
+  InboxUserIdRoute: typeof InboxUserIdRoute
   LegalDocRoute: typeof LegalDocRoute
   PaymentReturnRoute: typeof PaymentReturnRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -556,12 +557,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalDocRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/inbox/$userId': {
-      id: '/inbox/$userId'
-      path: '/$userId'
+    '/inbox_/$userId': {
+      id: '/inbox_/$userId'
+      path: '/inbox/$userId'
       fullPath: '/inbox/$userId'
       preLoaderRoute: typeof InboxUserIdRouteImport
-      parentRoute: typeof InboxRoute
+      parentRoute: typeof rootRouteImport
     }
     '/product/$id_/edit': {
       id: '/product/$id_/edit'
@@ -594,16 +595,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface InboxRouteChildren {
-  InboxUserIdRoute: typeof InboxUserIdRoute
-}
-
-const InboxRouteChildren: InboxRouteChildren = {
-  InboxUserIdRoute: InboxUserIdRoute,
-}
-
-const InboxRouteWithChildren = InboxRoute._addFileChildren(InboxRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
@@ -611,7 +602,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   HelpRoute: HelpRoute,
-  InboxRoute: InboxRouteWithChildren,
+  InboxRoute: InboxRoute,
   InviteRoute: InviteRoute,
   KycRoute: KycRoute,
   NotificationsRoute: NotificationsRoute,
@@ -624,6 +615,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SellRoute: SellRoute,
   SettingsRoute: SettingsRoute,
+  InboxUserIdRoute: InboxUserIdRoute,
   LegalDocRoute: LegalDocRoute,
   PaymentReturnRoute: PaymentReturnRoute,
   ProductIdRoute: ProductIdRoute,
@@ -636,12 +628,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
