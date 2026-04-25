@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useBlockedSellers } from "@/hooks/use-blocked";
 import { Eye, Heart, MapPin, MessageSquare, Share2, Star, Truck } from "lucide-react";
 import { toast } from "sonner";
 import {
