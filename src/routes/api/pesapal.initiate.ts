@@ -68,8 +68,8 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
           try {
             ipnId = await ensureIpn(ipnUrl);
           } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            return Response.json({ error: "Could not register payment notification URL.", details: msg }, { status: 502 });
+            console.error("Pesapal ensureIpn error:", e);
+            return Response.json({ error: "Could not register payment notification URL." }, { status: 502 });
           }
 
           const merchantReference = `SLR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -85,15 +85,16 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
             status: "pending",
           });
           if (insertErr) {
-            return Response.json({ error: "Failed to create order", details: insertErr.message }, { status: 500 });
+            console.error("payment_orders insert error:", insertErr);
+            return Response.json({ error: "Failed to create order" }, { status: 500 });
           }
 
           let accessToken: string;
           try {
             accessToken = await getPesapalToken();
           } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            return Response.json({ error: "Pesapal authentication failed. Please try again.", details: msg }, { status: 502 });
+            console.error("Pesapal getPesapalToken error:", e);
+            return Response.json({ error: "Pesapal authentication failed. Please try again." }, { status: 502 });
           }
 
           const submit = await fetch(`${PESAPAL_BASE}/api/Transactions/SubmitOrderRequest`, {
@@ -129,10 +130,8 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
               .from("payment_orders")
               .update({ status: "failed", raw_status_response: submitData as never })
               .eq("merchant_reference", merchantReference);
-            const errMsg =
-              (submitData.error as { message?: string } | undefined)?.message ||
-              "Pesapal rejected the order. Please try again.";
-            return Response.json({ error: errMsg, details: submitData }, { status: 502 });
+            console.error("Pesapal SubmitOrderRequest failed:", submitData);
+            return Response.json({ error: "Pesapal rejected the order. Please try again." }, { status: 502 });
           }
 
           await supabaseAdmin
@@ -150,8 +149,7 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
           });
         } catch (err) {
           console.error("Pesapal initiate error:", err);
-          const msg = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: "Server error", details: msg }, { status: 500 });
+          return Response.json({ error: "Server error" }, { status: 500 });
         }
       },
     },
