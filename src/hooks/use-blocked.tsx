@@ -16,12 +16,11 @@ export function useBlockedSellers() {
       return;
     }
     supabase
-      .from("profiles")
-      .select("blocked_users")
-      .eq("user_id", user.id)
-      .maybeSingle()
+      .from("user_blocks")
+      .select("blocked_id")
+      .eq("blocker_id", user.id)
       .then(({ data }) => {
-        setBlocked(new Set((data?.blocked_users as string[] | null) ?? []));
+        setBlocked(new Set((data ?? []).map((r) => r.blocked_id)));
       });
   }, [user]);
 

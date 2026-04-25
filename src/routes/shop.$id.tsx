@@ -58,8 +58,8 @@ function Shop() {
         } else setReviews([]);
       });
     if (user) {
-      supabase.from("profiles").select("blocked_users").eq("user_id", user.id).maybeSingle()
-        .then(({ data }) => setIsBlocked(((data?.blocked_users as string[] | null) ?? []).includes(id)));
+      supabase.from("user_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", id).maybeSingle()
+        .then(({ data }) => setIsBlocked(!!data));
     }
   }, [id, user]);
 
@@ -68,14 +68,12 @@ function Shop() {
       toast.error("Sign in to manage blocks");
       return;
     }
-    const { data } = await supabase.from("profiles").select("blocked_users").eq("user_id", user.id).single();
-    const current = new Set<string>((data?.blocked_users as string[] | null) ?? []);
-    if (isBlocked) current.delete(id);
-    else current.add(id);
-    const { error } = await supabase.from("profiles").update({ blocked_users: Array.from(current) }).eq("user_id", user.id);
-    if (error) {
-      toast.error(error.message);
-      return;
+    if (isBlocked) {
+      const { error } = await supabase.from("user_blocks").delete().eq("blocker_id", user.id).eq("blocked_id", id);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from("user_blocks").insert({ blocker_id: user.id, blocked_id: id });
+      if (error) { toast.error(error.message); return; }
     }
     setIsBlocked(!isBlocked);
     toast.success(isBlocked ? "Seller unblocked" : "Seller blocked. Their listings are now hidden.");
