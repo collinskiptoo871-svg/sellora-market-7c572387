@@ -141,6 +141,7 @@ function ProductPage() {
   const messageSeller = () => {
     if (!user) return navigate({ to: "/auth" });
     if (user.id === p.seller_id) return toast.info("This is your own listing");
+    if (isBlocked) return toast.error("You blocked this seller. Unblock them from their shop page to message.");
     navigate({ to: "/inbox/$userId", params: { userId: p.seller_id }, search: { product: p.id } });
   };
 
