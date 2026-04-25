@@ -41,6 +41,7 @@ function Shop() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [products, setProducts] = useState<ProductCardData[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     supabase.from("profiles").select("*").eq("user_id", id).maybeSingle().then(({ data }) => setProfile(data as Profile | null));
@@ -56,14 +57,28 @@ function Shop() {
           setReviews(list.map((r) => ({ ...r, reviewer_name: m.get(r.reviewer_id)?.display_name ?? null, reviewer_avatar: m.get(r.reviewer_id)?.avatar_url ?? null })));
         } else setReviews([]);
       });
-  }, [id]);
+    if (user) {
+      supabase.from("profiles").select("blocked_users").eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => setIsBlocked(((data?.blocked_users as string[] | null) ?? []).includes(id)));
+    }
+  }, [id, user]);
 
-  const blockSeller = async () => {
-    if (!user) return;
+  const toggleBlock = async () => {
+    if (!user) {
+      toast.error("Sign in to manage blocks");
+      return;
+    }
     const { data } = await supabase.from("profiles").select("blocked_users").eq("user_id", user.id).single();
-    const list = new Set([...(data?.blocked_users ?? []), id]);
-    await supabase.from("profiles").update({ blocked_users: Array.from(list) }).eq("user_id", user.id);
-    toast.success("Seller blocked");
+    const current = new Set<string>((data?.blocked_users as string[] | null) ?? []);
+    if (isBlocked) current.delete(id);
+    else current.add(id);
+    const { error } = await supabase.from("profiles").update({ blocked_users: Array.from(current) }).eq("user_id", user.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setIsBlocked(!isBlocked);
+    toast.success(isBlocked ? "Seller unblocked" : "Seller blocked. Their listings are now hidden.");
   };
 
   const avg = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
