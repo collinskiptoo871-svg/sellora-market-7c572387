@@ -36,6 +36,7 @@ interface Product {
 function ProductPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
+  const blocked = useBlockedSellers();
   const navigate = useNavigate();
   const [p, setP] = useState<Product | null>(null);
   const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null; location: string | null } | null>(null);
@@ -45,6 +46,8 @@ function ProductPage() {
   const [comment, setComment] = useState("");
   const [reportReason, setReportReason] = useState<string>("misleading");
   const [reportDetails, setReportDetails] = useState("");
+
+  const isBlocked = !!p && blocked.has(p.seller_id);
 
   useEffect(() => {
     let cancelled = false;
