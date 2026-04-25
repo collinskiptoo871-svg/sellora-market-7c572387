@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { ProductCard, type ProductCardData } from "@/components/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES } from "@/lib/countries";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBlockedSellers } from "@/hooks/use-blocked";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const navigate = useNavigate();
+  const blocked = useBlockedSellers();
   const [products, setProducts] = useState<ProductCardData[] | null>(null);
   const [category, setCategory] = useState<string>("All");
   const [q, setQ] = useState("");
@@ -33,6 +35,11 @@ function Home() {
     if (category !== "All") query = query.eq("category", category);
     query.then(({ data }) => setProducts((data as ProductCardData[]) ?? []));
   }, [category]);
+
+  const visible = useMemo(
+    () => (products ?? []).filter((p) => !blocked.has(p.seller_id)),
+    [products, blocked]
+  );
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
