@@ -100,7 +100,16 @@ function Chat() {
     let cancelled = false;
 
     const load = async () => {
-      const { data } = await supabase
+      // Respect per-user "clear chat": only show messages newer than my cleared_at.
+      const { data: clearRow } = await supabase
+        .from("chat_clears")
+        .select("cleared_at")
+        .eq("user_id", user.id)
+        .eq("peer_id", userId)
+        .maybeSingle();
+      const clearedAt = (clearRow as { cleared_at: string } | null)?.cleared_at;
+
+      let q = supabase
         .from("messages")
         .select("*")
         .or(
@@ -108,6 +117,9 @@ function Chat() {
         )
         .order("created_at", { ascending: true })
         .limit(500);
+      if (clearedAt) q = q.gt("created_at", clearedAt);
+
+      const { data } = await q;
       if (cancelled) return;
       const list = (data as Msg[]) ?? [];
       setMessages(list);
@@ -373,7 +385,17 @@ function Chat() {
   const clearChat = async () => {
     if (!user) return;
     if (!confirm("Clear this conversation? Only your view is affected.")) return;
-    // Soft clear: just remove from local view (we don't have per-user delete table)
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("chat_clears")
+      .upsert(
+        { user_id: user.id, peer_id: userId, cleared_at: now },
+        { onConflict: "user_id,peer_id" }
+      );
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setMessages([]);
     toast.success("Chat cleared from your view.");
   };

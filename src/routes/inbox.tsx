@@ -33,6 +33,16 @@ function Inbox() {
     if (!user) return;
     (async () => {
       setLoadingThreads(true);
+
+      // Load my per-peer chat clears so the inbox respects them too.
+      const { data: clears } = await supabase
+        .from("chat_clears")
+        .select("peer_id,cleared_at")
+        .eq("user_id", user.id);
+      const clearMap = new Map<string, string>(
+        ((clears as { peer_id: string; cleared_at: string }[]) ?? []).map((c) => [c.peer_id, c.cleared_at])
+      );
+
       const { data: msgs } = await supabase
         .from("messages")
         .select("id,sender_id,recipient_id,product_id,body,read,created_at")
@@ -52,6 +62,9 @@ function Inbox() {
 
       for (const m of msgs) {
         const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+        // Skip messages older than my "cleared" timestamp for this peer.
+        const clearedAt = clearMap.get(other);
+        if (clearedAt && new Date(m.created_at) <= new Date(clearedAt)) continue;
         const key = `${other}:${m.product_id ?? "none"}`;
         otherIds.add(other);
         if (m.product_id) productIds.add(m.product_id);

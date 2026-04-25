@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useBlockedSellers } from "@/hooks/use-blocked";
 import { Eye, Heart, MapPin, MessageSquare, Share2, Star, Truck } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -35,6 +36,7 @@ interface Product {
 function ProductPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
+  const blocked = useBlockedSellers();
   const navigate = useNavigate();
   const [p, setP] = useState<Product | null>(null);
   const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null; location: string | null } | null>(null);
@@ -45,24 +47,54 @@ function ProductPage() {
   const [reportReason, setReportReason] = useState<string>("misleading");
   const [reportDetails, setReportDetails] = useState("");
 
+  const isBlocked = !!p && blocked.has(p.seller_id);
+
   useEffect(() => {
+    let cancelled = false;
     supabase.from("products").select("*").eq("id", id).maybeSingle().then(async ({ data }) => {
-      if (data) {
-        setP(data as Product);
-        await supabase.from("products").update({ views: (data.views ?? 0) + 1 }).eq("id", id);
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("display_name,avatar_url,location")
-          .eq("user_id", data.seller_id)
-          .maybeSingle();
-        setSeller(prof ?? null);
-      }
+      if (cancelled || !data) return;
+      setP(data as Product);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("display_name,avatar_url,location")
+        .eq("user_id", data.seller_id)
+        .maybeSingle();
+      if (!cancelled) setSeller(prof ?? null);
     });
     if (user) {
       supabase.from("favorites").select("id").eq("user_id", user.id).eq("product_id", id).maybeSingle()
         .then(({ data }) => setSaved(!!data));
     }
+    return () => {
+      cancelled = true;
+    };
   }, [id, user]);
+
+  // Record one view per (product, viewer-or-IP) only after 10 seconds of dwell time.
+  useEffect(() => {
+    if (!p) return;
+    const sessionKey = `viewed:${id}`;
+    if (sessionStorage.getItem(sessionKey)) return;
+    const timer = setTimeout(async () => {
+      // Best-effort IP fetch for guests (so the unique constraint can dedupe).
+      let ip: string | null = null;
+      if (!user) {
+        try {
+          const res = await fetch("https://api.ipify.org?format=json");
+          if (res.ok) ip = (await res.json()).ip ?? null;
+        } catch {
+          ip = null;
+        }
+      }
+      const { data: bumped } = await supabase.rpc("record_product_view", {
+        _product_id: id,
+        _viewer_ip: ip ?? "",
+      });
+      sessionStorage.setItem(sessionKey, "1");
+      if (bumped) setP((prev) => (prev ? { ...prev, views: (prev.views ?? 0) + 1 } : prev));
+    }, 10_000);
+    return () => clearTimeout(timer);
+  }, [p, id, user]);
 
   if (!p) return <AppLayout><p className="p-8 text-center text-muted-foreground">Loading...</p></AppLayout>;
 
@@ -109,6 +141,7 @@ function ProductPage() {
   const messageSeller = () => {
     if (!user) return navigate({ to: "/auth" });
     if (user.id === p.seller_id) return toast.info("This is your own listing");
+    if (isBlocked) return toast.error("You blocked this seller. Unblock them from their shop page to message.");
     navigate({ to: "/inbox/$userId", params: { userId: p.seller_id }, search: { product: p.id } });
   };
 
@@ -165,7 +198,7 @@ function ProductPage() {
       </div>
 
       <div className="mt-4 flex gap-2">
-        {user && user.id !== p.seller_id ? (
+        {user && user.id !== p.seller_id && !isBlocked ? (
           <Link
             to="/inbox/$userId"
             params={{ userId: p.seller_id }}
@@ -177,9 +210,10 @@ function ProductPage() {
         ) : (
           <button
             onClick={messageSeller}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] font-semibold text-primary-foreground"
+            disabled={isBlocked}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] font-semibold text-primary-foreground disabled:opacity-50"
           >
-            <MessageSquare className="h-5 w-5" /> Message Seller
+            <MessageSquare className="h-5 w-5" /> {isBlocked ? "Seller Blocked" : "Message Seller"}
           </button>
         )}
         <button onClick={toggleSave} aria-label={saved ? "Unsave" : "Save"} className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-card">
