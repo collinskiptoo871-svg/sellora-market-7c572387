@@ -46,23 +46,51 @@ function ProductPage() {
   const [reportDetails, setReportDetails] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     supabase.from("products").select("*").eq("id", id).maybeSingle().then(async ({ data }) => {
-      if (data) {
-        setP(data as Product);
-        await supabase.from("products").update({ views: (data.views ?? 0) + 1 }).eq("id", id);
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("display_name,avatar_url,location")
-          .eq("user_id", data.seller_id)
-          .maybeSingle();
-        setSeller(prof ?? null);
-      }
+      if (cancelled || !data) return;
+      setP(data as Product);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("display_name,avatar_url,location")
+        .eq("user_id", data.seller_id)
+        .maybeSingle();
+      if (!cancelled) setSeller(prof ?? null);
     });
     if (user) {
       supabase.from("favorites").select("id").eq("user_id", user.id).eq("product_id", id).maybeSingle()
         .then(({ data }) => setSaved(!!data));
     }
+    return () => {
+      cancelled = true;
+    };
   }, [id, user]);
+
+  // Record one view per (product, viewer-or-IP) only after 10 seconds of dwell time.
+  useEffect(() => {
+    if (!p) return;
+    const sessionKey = `viewed:${id}`;
+    if (sessionStorage.getItem(sessionKey)) return;
+    const timer = setTimeout(async () => {
+      // Best-effort IP fetch for guests (so the unique constraint can dedupe).
+      let ip: string | null = null;
+      if (!user) {
+        try {
+          const res = await fetch("https://api.ipify.org?format=json");
+          if (res.ok) ip = (await res.json()).ip ?? null;
+        } catch {
+          ip = null;
+        }
+      }
+      const { data: bumped } = await supabase.rpc("record_product_view", {
+        _product_id: id,
+        _viewer_ip: ip,
+      });
+      sessionStorage.setItem(sessionKey, "1");
+      if (bumped) setP((prev) => (prev ? { ...prev, views: (prev.views ?? 0) + 1 } : prev));
+    }, 10_000);
+    return () => clearTimeout(timer);
+  }, [p, id, user]);
 
   if (!p) return <AppLayout><p className="p-8 text-center text-muted-foreground">Loading...</p></AppLayout>;
 
