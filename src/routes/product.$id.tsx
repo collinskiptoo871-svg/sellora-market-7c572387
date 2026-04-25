@@ -84,7 +84,7 @@ function ProductPage() {
       }
       const { data: bumped } = await supabase.rpc("record_product_view", {
         _product_id: id,
-        _viewer_ip: ip,
+        _viewer_ip: ip ?? "",
       });
       sessionStorage.setItem(sessionKey, "1");
       if (bumped) setP((prev) => (prev ? { ...prev, views: (prev.views ?? 0) + 1 } : prev));
