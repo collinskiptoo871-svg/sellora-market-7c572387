@@ -198,7 +198,7 @@ function ProductPage() {
       </div>
 
       <div className="mt-4 flex gap-2">
-        {user && user.id !== p.seller_id ? (
+        {user && user.id !== p.seller_id && !isBlocked ? (
           <Link
             to="/inbox/$userId"
             params={{ userId: p.seller_id }}
@@ -210,9 +210,10 @@ function ProductPage() {
         ) : (
           <button
             onClick={messageSeller}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] font-semibold text-primary-foreground"
+            disabled={isBlocked}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] font-semibold text-primary-foreground disabled:opacity-50"
           >
-            <MessageSquare className="h-5 w-5" /> Message Seller
+            <MessageSquare className="h-5 w-5" /> {isBlocked ? "Seller Blocked" : "Message Seller"}
           </button>
         )}
         <button onClick={toggleSave} aria-label={saved ? "Unsave" : "Save"} className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-card">
