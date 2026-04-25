@@ -139,11 +139,11 @@ function Dashboard() {
 
       <h2 className="mt-5 text-lg font-bold">Dashboard</h2>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <Tile icon={Box} label="My Products" sub={`${counts.products} items`} to="/dashboard" />
+        <FilterTile icon={Box} label="My Products" sub={`${counts.products} items`} active={filter === "all"} onClick={() => setFilter("all")} />
         <Tile icon={Star} label="Reviews" sub={`${counts.reviews} items`} to={user ? `/shop/${user.id}` : "/"} />
         <Tile icon={Inbox} label="Inbox" to="/inbox" />
-        <Tile icon={Archive} label="Archived" sub={`${products.filter((p) => p.status === "archived").length} items`} to="/dashboard" />
-        <Tile icon={Eye} label="Sold Out" sub={`${products.filter((p) => p.status === "sold").length} items`} to="/dashboard" />
+        <FilterTile icon={Archive} label="Archived" sub={`${products.filter((p) => p.status === "archived").length} items`} active={filter === "archived"} onClick={() => setFilter("archived")} />
+        <FilterTile icon={Eye} label="Sold Out" sub={`${products.filter((p) => p.status === "sold").length} items`} active={filter === "sold"} onClick={() => setFilter("sold")} />
         <Tile icon={UserPen} label="Edit Profile" to="/onboarding" />
         <Tile icon={Store} label="View Shop" to={user ? `/shop/${user.id}` : "/"} />
         <Tile icon={Plus} label="Add Product" to="/sell" />
@@ -152,30 +152,79 @@ function Dashboard() {
       </div>
 
       <h2 className="mt-5 flex items-center justify-between text-lg font-bold">
-        My Products <Link to="/dashboard" className="text-sm font-medium text-primary">View All</Link>
+        <span className="capitalize">{filter === "all" ? "My Products" : `${filter} Products`}</span>
+        {filter !== "all" && (
+          <button onClick={() => setFilter("all")} className="text-sm font-medium text-primary">
+            Show all
+          </button>
+        )}
       </h2>
       <div className="mt-2 space-y-2">
-        {products.length === 0 && <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No products yet</p>}
-        {products.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
-            <Link to="/product/$id" params={{ id: p.id }} className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
-              {p.photos[0] && <img src={p.photos[0]} alt="" className="h-full w-full object-cover" />}
-            </Link>
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 font-semibold">{p.title}</p>
-              <p className="text-sm font-bold text-primary">{p.currency} {p.price.toLocaleString()}</p>
-              <p className="flex items-center gap-1 text-xs text-muted-foreground"><Eye className="h-3 w-3" /> {p.views} • <span className="capitalize">{p.status}</span></p>
+        {(() => {
+          const list = filter === "all" ? products : products.filter((p) => p.status === filter);
+          if (list.length === 0)
+            return (
+              <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                {filter === "all" ? "No products yet" : `No ${filter} products`}
+              </p>
+            );
+          return list.map((p) => (
+            <div key={p.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+              <Link to="/product/$id" params={{ id: p.id }} className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
+                {p.photos[0] && <img src={p.photos[0]} alt="" className="h-full w-full object-cover" />}
+              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-1 font-semibold">{p.title}</p>
+                <p className="text-sm font-bold text-primary">{p.currency} {p.price.toLocaleString()}</p>
+                <p className="flex items-center gap-1 text-xs text-muted-foreground"><Eye className="h-3 w-3" /> {p.views} • <span className="capitalize">{p.status}</span></p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Link to="/product/$id/edit" params={{ id: p.id }} className="rounded-md bg-primary-soft px-3 py-1 text-center text-xs font-medium text-accent-foreground">Edit</Link>
+                {p.status !== "sold" && (
+                  <button type="button" onClick={() => updateStatus(p.id, "sold")} className="rounded-md bg-warning/30 px-3 py-1 text-xs font-medium">Sold Out</button>
+                )}
+                {p.status === "archived" ? (
+                  <button onClick={() => updateStatus(p.id, "active")} className="rounded-md bg-primary/20 px-3 py-1 text-xs font-medium text-primary">Unarchive</button>
+                ) : (
+                  <button onClick={() => updateStatus(p.id, "archived")} className="rounded-md bg-secondary px-3 py-1 text-xs font-medium">Archive</button>
+                )}
+                <button onClick={() => updateStatus(p.id, "deleted")} className="rounded-md bg-destructive/20 px-3 py-1 text-xs font-medium text-destructive">Delete</button>
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <Link to="/product/$id/edit" params={{ id: p.id }} className="rounded-md bg-primary-soft px-3 py-1 text-center text-xs font-medium text-accent-foreground">Edit</Link>
-              <button type="button" onClick={() => updateStatus(p.id, "sold")} className="rounded-md bg-warning/30 px-3 py-1 text-xs font-medium">Sold Out</button>
-              <button onClick={() => updateStatus(p.id, "archived")} className="rounded-md bg-secondary px-3 py-1 text-xs font-medium">Archive</button>
-              <button onClick={() => updateStatus(p.id, "deleted")} className="rounded-md bg-destructive/20 px-3 py-1 text-xs font-medium text-destructive">Delete</button>
-            </div>
-          </div>
-        ))}
+          ));
+        })()}
       </div>
     </AppLayout>
+  );
+}
+
+function FilterTile({
+  icon: Icon,
+  label,
+  sub,
+  active,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  sub?: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${
+        active ? "border-primary bg-primary-soft" : "border-border bg-card hover:bg-secondary"
+      }`}
+    >
+      <Icon className={`h-5 w-5 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
+      <div className="min-w-0">
+        <p className="text-sm font-semibold leading-tight">{label}</p>
+        {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+      </div>
+    </button>
   );
 }
 
