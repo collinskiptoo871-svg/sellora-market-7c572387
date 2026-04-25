@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_clears: {
+        Row: {
+          cleared_at: string
+          peer_id: string
+          user_id: string
+        }
+        Insert: {
+          cleared_at?: string
+          peer_id: string
+          user_id: string
+        }
+        Update: {
+          cleared_at?: string
+          peer_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       collection_items: {
         Row: {
           collection_id: string
@@ -315,6 +333,30 @@ export type Database = {
           ipn_id?: string | null
           ipn_url?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      product_views: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          viewer_id: string | null
+          viewer_ip: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          viewer_id?: string | null
+          viewer_ip?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          viewer_id?: string | null
+          viewer_ip?: string | null
         }
         Relationships: []
       }
@@ -630,6 +672,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      record_product_view: {
+        Args: { _product_id: string; _viewer_ip: string }
         Returns: boolean
       }
     }
