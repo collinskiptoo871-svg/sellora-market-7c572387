@@ -385,7 +385,17 @@ function Chat() {
   const clearChat = async () => {
     if (!user) return;
     if (!confirm("Clear this conversation? Only your view is affected.")) return;
-    // Soft clear: just remove from local view (we don't have per-user delete table)
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("chat_clears")
+      .upsert(
+        { user_id: user.id, peer_id: userId, cleared_at: now },
+        { onConflict: "user_id,peer_id" }
+      );
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setMessages([]);
     toast.success("Chat cleared from your view.");
   };
