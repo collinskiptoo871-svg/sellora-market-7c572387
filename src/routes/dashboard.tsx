@@ -21,12 +21,15 @@ interface MiniProduct {
   status: string;
 }
 
+type StatusFilter = "all" | "active" | "archived" | "sold";
+
 function Dashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null; location: string | null; verified: boolean } | null>(null);
   const [products, setProducts] = useState<MiniProduct[]>([]);
   const [counts, setCounts] = useState({ products: 0, active: 0, views: 0, reviews: 0 });
+  const [filter, setFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
