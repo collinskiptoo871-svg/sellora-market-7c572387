@@ -528,8 +528,8 @@ function Chat() {
                     key={m.id}
                     className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
                       mine
-                        ? "mr-auto rounded-bl-sm bg-primary text-primary-foreground"
-                        : "ml-auto rounded-br-sm bg-card"
+                        ? "ml-auto rounded-br-sm bg-primary text-primary-foreground"
+                        : "mr-auto rounded-bl-sm bg-card"
                     }`}
                   >
                     {m.kind === "location" && m.latitude != null && m.longitude != null ? (
@@ -606,7 +606,7 @@ function Chat() {
           ))
         )}
         {peerTyping && (
-          <div className="ml-auto flex items-center gap-1 rounded-2xl rounded-br-sm bg-card px-3 py-2 shadow-sm">
+          <div className="mr-auto flex items-center gap-1 rounded-2xl rounded-bl-sm bg-card px-3 py-2 shadow-sm">
             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.2s]" />
             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.1s]" />
             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
