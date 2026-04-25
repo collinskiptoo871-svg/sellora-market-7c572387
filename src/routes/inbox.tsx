@@ -62,6 +62,9 @@ function Inbox() {
 
       for (const m of msgs) {
         const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+        // Skip messages older than my "cleared" timestamp for this peer.
+        const clearedAt = clearMap.get(other);
+        if (clearedAt && new Date(m.created_at) <= new Date(clearedAt)) continue;
         const key = `${other}:${m.product_id ?? "none"}`;
         otherIds.add(other);
         if (m.product_id) productIds.add(m.product_id);
