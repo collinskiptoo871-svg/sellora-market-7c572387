@@ -162,8 +162,13 @@ function Shop() {
       )}
 
       {user && user.id !== id && (
-        <button onClick={blockSeller} className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-destructive/30 py-2 text-sm font-medium text-destructive">
-          <UserX className="h-4 w-4" /> Block Seller
+        <button
+          onClick={toggleBlock}
+          className={`mt-3 flex w-full items-center justify-center gap-2 rounded-md border py-2 text-sm font-medium ${
+            isBlocked ? "border-border text-foreground" : "border-destructive/30 text-destructive"
+          }`}
+        >
+          <UserX className="h-4 w-4" /> {isBlocked ? "Unblock Seller" : "Block Seller"}
         </button>
       )}
 
