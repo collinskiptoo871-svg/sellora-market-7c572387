@@ -33,6 +33,16 @@ function Inbox() {
     if (!user) return;
     (async () => {
       setLoadingThreads(true);
+
+      // Load my per-peer chat clears so the inbox respects them too.
+      const { data: clears } = await supabase
+        .from("chat_clears")
+        .select("peer_id,cleared_at")
+        .eq("user_id", user.id);
+      const clearMap = new Map<string, string>(
+        ((clears as { peer_id: string; cleared_at: string }[]) ?? []).map((c) => [c.peer_id, c.cleared_at])
+      );
+
       const { data: msgs } = await supabase
         .from("messages")
         .select("id,sender_id,recipient_id,product_id,body,read,created_at")
