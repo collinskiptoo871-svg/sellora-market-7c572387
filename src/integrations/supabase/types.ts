@@ -432,7 +432,6 @@ export type Database = {
           avg_response_minutes: number
           banner_url: string | null
           bio: string | null
-          blocked_users: string[]
           country: string | null
           created_at: string
           display_name: string | null
@@ -452,7 +451,6 @@ export type Database = {
           avg_response_minutes?: number
           banner_url?: string | null
           bio?: string | null
-          blocked_users?: string[]
           country?: string | null
           created_at?: string
           display_name?: string | null
@@ -472,7 +470,6 @@ export type Database = {
           avg_response_minutes?: number
           banner_url?: string | null
           bio?: string | null
-          blocked_users?: string[]
           country?: string | null
           created_at?: string
           display_name?: string | null
@@ -599,6 +596,27 @@ export type Database = {
           peer_id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
         }
         Relationships: []
       }
