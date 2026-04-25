@@ -92,7 +92,7 @@ function Home() {
             <Skeleton key={i} className="aspect-[3/4] w-full rounded-lg" />
           ))}
         </div>
-      ) : products.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
           <p className="text-muted-foreground">No products yet. Be the first to list one!</p>
           <Link to="/sell" className="mt-3 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
@@ -101,7 +101,7 @@ function Home() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {products.map((p) => (
+          {visible.map((p) => (
             <ProductCard key={p.id} p={p} />
           ))}
         </div>
