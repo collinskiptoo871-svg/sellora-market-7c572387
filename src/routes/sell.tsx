@@ -125,6 +125,12 @@ function Sell() {
         photos: photoUrls,
       });
       if (error) throw error;
+      void recordEvent({
+        type: "post",
+        content: `${parsed.data.title}\n\n${parsed.data.description ?? ""}`,
+        userId: user.id,
+        metadata: { category: parsed.data.category, price: parsed.data.price },
+      });
       toast.success("Product listed!");
       navigate({ to: "/dashboard" });
     } catch (err) {
