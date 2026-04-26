@@ -275,6 +275,11 @@ function Chat() {
       toast.info("You can't message yourself");
       return;
     }
+    const susp = await isSuspended(user.id);
+    if (susp.suspended) {
+      toast.error(`Account suspended until ${new Date(susp.until!).toLocaleString()}`);
+      return;
+    }
     setSending(true);
 
     // Optimistic queued bubble
