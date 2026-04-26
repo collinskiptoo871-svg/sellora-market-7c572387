@@ -33,6 +33,7 @@ import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as LegalDocRouteImport } from './routes/legal.$doc'
 import { Route as InboxUserIdRouteImport } from './routes/inbox_.$userId'
+import { Route as ApiModerateRouteImport } from './routes/api/moderate'
 import { Route as ProductIdEditRouteImport } from './routes/product.$id_.edit'
 import { Route as ApiPesapalStatusRouteImport } from './routes/api/pesapal.status'
 import { Route as ApiPesapalInitiateRouteImport } from './routes/api/pesapal.initiate'
@@ -158,6 +159,11 @@ const InboxUserIdRoute = InboxUserIdRouteImport.update({
   path: '/inbox/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiModerateRoute = ApiModerateRouteImport.update({
+  id: '/api/moderate',
+  path: '/api/moderate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductIdEditRoute = ProductIdEditRouteImport.update({
   id: '/product/$id_/edit',
   path: '/product/$id/edit',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/sell': typeof SellRoute
   '/settings': typeof SettingsRoute
+  '/api/moderate': typeof ApiModerateRoute
   '/inbox/$userId': typeof InboxUserIdRoute
   '/legal/$doc': typeof LegalDocRoute
   '/payment/return': typeof PaymentReturnRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/sell': typeof SellRoute
   '/settings': typeof SettingsRoute
+  '/api/moderate': typeof ApiModerateRoute
   '/inbox/$userId': typeof InboxUserIdRoute
   '/legal/$doc': typeof LegalDocRoute
   '/payment/return': typeof PaymentReturnRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/sell': typeof SellRoute
   '/settings': typeof SettingsRoute
+  '/api/moderate': typeof ApiModerateRoute
   '/inbox_/$userId': typeof InboxUserIdRoute
   '/legal/$doc': typeof LegalDocRoute
   '/payment/return': typeof PaymentReturnRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/sell'
     | '/settings'
+    | '/api/moderate'
     | '/inbox/$userId'
     | '/legal/$doc'
     | '/payment/return'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/sell'
     | '/settings'
+    | '/api/moderate'
     | '/inbox/$userId'
     | '/legal/$doc'
     | '/payment/return'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/sell'
     | '/settings'
+    | '/api/moderate'
     | '/inbox_/$userId'
     | '/legal/$doc'
     | '/payment/return'
@@ -383,6 +395,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SellRoute: typeof SellRoute
   SettingsRoute: typeof SettingsRoute
+  ApiModerateRoute: typeof ApiModerateRoute
   InboxUserIdRoute: typeof InboxUserIdRoute
   LegalDocRoute: typeof LegalDocRoute
   PaymentReturnRoute: typeof PaymentReturnRoute
@@ -564,6 +577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InboxUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/moderate': {
+      id: '/api/moderate'
+      path: '/api/moderate'
+      fullPath: '/api/moderate'
+      preLoaderRoute: typeof ApiModerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/product/$id_/edit': {
       id: '/product/$id_/edit'
       path: '/product/$id/edit'
@@ -615,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SellRoute: SellRoute,
   SettingsRoute: SettingsRoute,
+  ApiModerateRoute: ApiModerateRoute,
   InboxUserIdRoute: InboxUserIdRoute,
   LegalDocRoute: LegalDocRoute,
   PaymentReturnRoute: PaymentReturnRoute,
