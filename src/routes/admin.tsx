@@ -92,6 +92,45 @@ function Admin() {
           </li>
         ))}
       </ul>
+
+      <h2 className="mt-6 mb-2 text-lg font-bold">Appeal queue</h2>
+      <ul className="space-y-2">
+        {appeals.length === 0 && (
+          <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            No pending appeals
+          </p>
+        )}
+        {appeals.map((a) => (
+          <li key={a.id} className="space-y-2 rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-muted-foreground">User {a.user_id.slice(0, 8)}…</span>
+              <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString()}</span>
+            </div>
+            <p className="whitespace-pre-wrap text-sm">{a.message}</p>
+            <textarea
+              value={responses[a.id] ?? ""}
+              onChange={(e) => setResponses((r) => ({ ...r, [a.id]: e.target.value }))}
+              placeholder="Optional response to the user…"
+              rows={2}
+              className="w-full resize-none rounded-md border border-border bg-background p-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => decideAppeal(a.id, "approved")}
+                className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white"
+              >
+                Approve & restore
+              </button>
+              <button
+                onClick={() => decideAppeal(a.id, "rejected")}
+                className="rounded-md bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground"
+              >
+                Reject
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </AppLayout>
   );
 }
