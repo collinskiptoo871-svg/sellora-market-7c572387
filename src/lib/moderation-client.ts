@@ -88,12 +88,13 @@ async function runModeration(userId: string) {
 }
 
 export async function isSuspended(userId: string): Promise<{ suspended: boolean; until?: string }> {
-  const { data } = await supabase
-    .from("profiles")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("profiles") as any)
     .select("suspended_until")
     .eq("user_id", userId)
     .maybeSingle();
   if (!data?.suspended_until) return { suspended: false };
-  const until = data.suspended_until;
+  const until = data.suspended_until as string;
   return { suspended: new Date(until) > new Date(), until };
 }
+
