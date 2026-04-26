@@ -150,7 +150,8 @@ export const Route = createFileRoute("/api/moderate")({
             if (shouldSuspend) {
               update.suspended_until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
             }
-            await supabaseAdmin.from("profiles").update(update).eq("user_id", userId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabaseAdmin.from("profiles") as any).update(update).eq("user_id", userId);
           }
 
           return Response.json({ ok: true, flags: inserted, ai: aiVerdict });
