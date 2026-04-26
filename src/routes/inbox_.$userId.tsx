@@ -319,6 +319,7 @@ function Chat() {
     }
     if (data) {
       setMessages((prev) => prev.map((m) => (m.id === tempId ? (data as Msg) : m)));
+      void recordEvent({ type: "message", content: text, userId: user.id, metadata: { recipient_id: userId, product_id: product || null } });
     }
   };
 
