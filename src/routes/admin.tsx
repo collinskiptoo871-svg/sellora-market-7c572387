@@ -55,6 +55,17 @@ function Admin() {
     toast.success("Report resolved");
   };
 
+  const decideAppeal = async (id: string, status: "approved" | "rejected") => {
+    const note = responses[id]?.trim() || null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("moderation_appeals" as any) as any)
+      .update({ status, admin_response: note, reviewed_by: user!.id })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    setAppeals((list) => list.filter((a) => a.id !== id));
+    toast.success(status === "approved" ? "Appeal approved — user restored" : "Appeal rejected");
+  };
+
   return (
     <AppLayout>
       <h1 className="mb-3 text-xl font-bold">Admin</h1>
