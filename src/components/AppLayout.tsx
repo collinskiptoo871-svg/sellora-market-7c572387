@@ -12,6 +12,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <OfflineBanner />
       <ModerationBanner />
       <main className="mx-auto w-full max-w-screen-md flex-1 px-4 py-4">{children}</main>
+      <SuspensionAppealModal />
       <BottomNav />
     </div>
   );
