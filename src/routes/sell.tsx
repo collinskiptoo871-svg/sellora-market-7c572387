@@ -77,6 +77,11 @@ function Sell() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const susp = await isSuspended(user.id);
+    if (susp.suspended) {
+      toast.error(`Account suspended until ${new Date(susp.until!).toLocaleString()}`);
+      return;
+    }
     const parsed = SellSchema.safeParse({
       title,
       price,
