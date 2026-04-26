@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { GuestGate } from "@/components/GuestGate";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { recordEvent } from "@/lib/moderation-client";
+import { recordEvent, isSuspended } from "@/lib/moderation-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
