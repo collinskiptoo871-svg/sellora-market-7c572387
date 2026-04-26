@@ -28,16 +28,20 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
+        const uid = data.user?.id ?? null;
+        void recordEvent({ type: "signup", userId: uid, metadata: { email } });
         toast.success("Account created! Check email if confirmation is required.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        const uid = data.user?.id ?? null;
+        void recordEvent({ type: "login", userId: uid, metadata: { email } });
         toast.success("Welcome back!");
       }
     } catch (err) {
