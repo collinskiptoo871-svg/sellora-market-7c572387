@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { GuestGate } from "@/components/GuestGate";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { recordEvent, isSuspended } from "@/lib/moderation-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -274,6 +275,11 @@ function Chat() {
       toast.info("You can't message yourself");
       return;
     }
+    const susp = await isSuspended(user.id);
+    if (susp.suspended) {
+      toast.error(`Account suspended until ${new Date(susp.until!).toLocaleString()}`);
+      return;
+    }
     setSending(true);
 
     // Optimistic queued bubble
@@ -319,6 +325,7 @@ function Chat() {
     }
     if (data) {
       setMessages((prev) => prev.map((m) => (m.id === tempId ? (data as Msg) : m)));
+      void recordEvent({ type: "message", content: text, userId: user.id, metadata: { recipient_id: userId, product_id: product || null } });
     }
   };
 

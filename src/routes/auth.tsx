@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { recordEvent } from "@/lib/moderation-client";
 import { Store } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,16 +28,20 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
+        const uid = data.user?.id ?? null;
+        void recordEvent({ type: "signup", userId: uid, metadata: { email } });
         toast.success("Account created! Check email if confirmation is required.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        const uid = data.user?.id ?? null;
+        void recordEvent({ type: "login", userId: uid, metadata: { email } });
         toast.success("Welcome back!");
       }
     } catch (err) {

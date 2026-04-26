@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { GuestGate } from "@/components/GuestGate";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { recordEvent, isSuspended } from "@/lib/moderation-client";
 import { CATEGORIES } from "@/lib/countries";
 import { describeGeoError, requestGeolocation } from "@/lib/geo";
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, Loader2, MapPin, Upload, X } from "lucide-react";
@@ -76,6 +77,11 @@ function Sell() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const susp = await isSuspended(user.id);
+    if (susp.suspended) {
+      toast.error(`Account suspended until ${new Date(susp.until!).toLocaleString()}`);
+      return;
+    }
     const parsed = SellSchema.safeParse({
       title,
       price,
@@ -124,6 +130,12 @@ function Sell() {
         photos: photoUrls,
       });
       if (error) throw error;
+      void recordEvent({
+        type: "post",
+        content: `${parsed.data.title}\n\n${parsed.data.description ?? ""}`,
+        userId: user.id,
+        metadata: { category: parsed.data.category, price: parsed.data.price },
+      });
       toast.success("Product listed!");
       navigate({ to: "/dashboard" });
     } catch (err) {
