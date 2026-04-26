@@ -45,7 +45,8 @@ export async function recordEvent(opts: {
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
   const userId = opts.userId ?? (await supabase.auth.getUser()).data.user?.id ?? null;
 
-  await supabase.from("moderation_events").insert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("moderation_events" as any) as any).insert({
     user_id: userId,
     event_type: opts.type,
     content: opts.content ?? null,
@@ -56,13 +57,11 @@ export async function recordEvent(opts: {
 
   if (userId) {
     const fp = getFingerprint();
-    // upsert device
-    await supabase
-      .from("device_fingerprints")
-      .upsert(
-        { user_id: userId, fingerprint: fp, ip, user_agent: ua, last_seen: new Date().toISOString() },
-        { onConflict: "user_id,fingerprint" }
-      );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("device_fingerprints" as any) as any).upsert(
+      { user_id: userId, fingerprint: fp, ip, user_agent: ua, last_seen: new Date().toISOString() },
+      { onConflict: "user_id,fingerprint" }
+    );
   }
 
   // Fire-and-forget moderation pass for content events
