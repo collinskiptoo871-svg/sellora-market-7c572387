@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { GuestGate } from "@/components/GuestGate";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { recordEvent } from "@/lib/moderation-client";
 import { CATEGORIES } from "@/lib/countries";
 import { describeGeoError, requestGeolocation } from "@/lib/geo";
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, Loader2, MapPin, Upload, X } from "lucide-react";
