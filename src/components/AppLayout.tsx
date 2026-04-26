@@ -3,6 +3,7 @@ import { AppHeader } from "./AppHeader";
 import { BottomNav } from "./BottomNav";
 import { OfflineBanner } from "./OfflineBanner";
 import { ModerationBanner } from "./ModerationBanner";
+import { SuspensionAppealModal } from "./SuspensionAppealModal";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
