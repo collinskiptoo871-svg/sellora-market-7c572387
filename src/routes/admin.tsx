@@ -18,6 +18,8 @@ function Admin() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
+  const [appeals, setAppeals] = useState<Appeal[]>([]);
+  const [responses, setResponses] = useState<Record<string, string>>({});
   const [stats, setStats] = useState({ users: 0, products: 0, reports: 0 });
 
   useEffect(() => {
