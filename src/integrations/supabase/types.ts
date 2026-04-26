@@ -252,6 +252,50 @@ export type Database = {
           },
         ]
       }
+      moderation_appeals: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          flag_id: string | null
+          id: string
+          message: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          flag_id?: string | null
+          id?: string
+          message: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          flag_id?: string | null
+          id?: string
+          message?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_appeals_flag_id_fkey"
+            columns: ["flag_id"]
+            isOneToOne: false
+            referencedRelation: "moderation_flags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moderation_events: {
         Row: {
           content: string | null
