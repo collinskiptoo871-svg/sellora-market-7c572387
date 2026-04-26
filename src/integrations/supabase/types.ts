@@ -95,6 +95,36 @@ export type Database = {
         }
         Relationships: []
       }
+      device_fingerprints: {
+        Row: {
+          fingerprint: string
+          first_seen: string
+          id: string
+          ip: string | null
+          last_seen: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          fingerprint: string
+          first_seen?: string
+          id?: string
+          ip?: string | null
+          last_seen?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          fingerprint?: string
+          first_seen?: string
+          id?: string
+          ip?: string | null
+          last_seen?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -221,6 +251,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      moderation_events: {
+        Row: {
+          content: string | null
+          created_at: string
+          event_type: string
+          id: string
+          ip: string | null
+          metadata: Json
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      moderation_flags: {
+        Row: {
+          acknowledged: boolean
+          ai_verdict: Json | null
+          category: string
+          created_at: string
+          id: string
+          reason: string
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          ai_verdict?: Json | null
+          category: string
+          created_at?: string
+          id?: string
+          reason: string
+          severity?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged?: boolean
+          ai_verdict?: Json | null
+          category?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -439,11 +535,13 @@ export type Database = {
           location: string | null
           response_rate: number
           shop_description: string | null
+          suspended_until: string | null
           updated_at: string
           user_id: string
           verified: boolean
           verified_at: string | null
           verified_tier: string | null
+          warning_count: number
           warning_level: string
         }
         Insert: {
@@ -458,11 +556,13 @@ export type Database = {
           location?: string | null
           response_rate?: number
           shop_description?: string | null
+          suspended_until?: string | null
           updated_at?: string
           user_id: string
           verified?: boolean
           verified_at?: string | null
           verified_tier?: string | null
+          warning_count?: number
           warning_level?: string
         }
         Update: {
@@ -477,11 +577,13 @@ export type Database = {
           location?: string | null
           response_rate?: number
           shop_description?: string | null
+          suspended_until?: string | null
           updated_at?: string
           user_id?: string
           verified?: boolean
           verified_at?: string | null
           verified_tier?: string | null
+          warning_count?: number
           warning_level?: string
         }
         Relationships: []
