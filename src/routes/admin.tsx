@@ -30,12 +30,18 @@ function Admin() {
       const admin = (data ?? []).some((r) => r.role === "admin");
       setIsAdmin(admin);
       if (!admin) return;
-      const [{ data: rep }, { count: pCount }, { count: uCount }] = await Promise.all([
+      const [{ data: rep }, { count: pCount }, { count: uCount }, { data: ap }] = await Promise.all([
         supabase.from("reports").select("*").eq("resolved", false).order("severity", { ascending: false }),
         supabase.from("products").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("moderation_appeals" as any) as any)
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false }),
       ]);
       setReports((rep as Report[]) ?? []);
+      setAppeals((ap as Appeal[]) ?? []);
       setStats({ users: uCount ?? 0, products: pCount ?? 0, reports: rep?.length ?? 0 });
     })();
   }, [user, loading, navigate]);
