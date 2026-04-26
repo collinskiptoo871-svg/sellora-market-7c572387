@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { recordEvent } from "@/lib/moderation-client";
 import { Store } from "lucide-react";
 import { toast } from "sonner";
 
