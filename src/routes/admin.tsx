@@ -11,6 +11,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 interface Report { id: string; reason: string; details: string | null; severity: number; resolved: boolean; created_at: string; reporter_id: string; target_user_id: string | null; target_product_id: string | null }
+interface Appeal { id: string; user_id: string; message: string; status: "pending" | "approved" | "rejected"; admin_response: string | null; created_at: string }
 
 function Admin() {
   const { user, loading } = useAuth();
