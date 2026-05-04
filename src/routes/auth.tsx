@@ -18,7 +18,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "otp">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState<string[]>(Array(8).fill(""));
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
