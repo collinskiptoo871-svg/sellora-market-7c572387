@@ -13,6 +13,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SellRouteImport } from './routes/sell'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SavedRouteImport } from './routes/saved'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PreferencesRouteImport } from './routes/preferences'
@@ -57,6 +58,11 @@ const SearchRoute = SearchRouteImport.update({
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportRoute = ReportRouteImport.update({
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/preferences': typeof PreferencesRoute
   '/privacy': typeof PrivacyRoute
   '/report': typeof ReportRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/sell': typeof SellRoute
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/preferences': typeof PreferencesRoute
   '/privacy': typeof PrivacyRoute
   '/report': typeof ReportRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/sell': typeof SellRoute
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/preferences': typeof PreferencesRoute
   '/privacy': typeof PrivacyRoute
   '/report': typeof ReportRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/sell': typeof SellRoute
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/preferences'
     | '/privacy'
     | '/report'
+    | '/reset-password'
     | '/saved'
     | '/search'
     | '/sell'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/preferences'
     | '/privacy'
     | '/report'
+    | '/reset-password'
     | '/saved'
     | '/search'
     | '/sell'
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/preferences'
     | '/privacy'
     | '/report'
+    | '/reset-password'
     | '/saved'
     | '/search'
     | '/sell'
@@ -391,6 +403,7 @@ export interface RootRouteChildren {
   PreferencesRoute: typeof PreferencesRoute
   PrivacyRoute: typeof PrivacyRoute
   ReportRoute: typeof ReportRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SavedRoute: typeof SavedRoute
   SearchRoute: typeof SearchRoute
   SellRoute: typeof SellRoute
@@ -435,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/saved'
       fullPath: '/saved'
       preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/report': {
@@ -631,6 +651,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreferencesRoute: PreferencesRoute,
   PrivacyRoute: PrivacyRoute,
   ReportRoute: ReportRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SavedRoute: SavedRoute,
   SearchRoute: SearchRoute,
   SellRoute: SellRoute,
@@ -649,12 +670,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

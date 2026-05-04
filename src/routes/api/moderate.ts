@@ -25,8 +25,26 @@ async function callGroq(prompt: string): Promise<AIVerdict | null> {
       messages: [
         {
           role: "system",
-          content:
-            "You are a strict but fair content & abuse moderator for a marketplace app (Sellora). Analyze the provided user activity and recent content. Detect: spam, scam attempts, hate/harassment, sexual content, illegal items, rate-limit abuse (too many messages/posts/logins per minute), suspicious login patterns (many IPs/devices in short time), and multi-accounting. Respond ONLY in JSON: {\"verdict\":\"ok|warn|suspend\",\"severity\":\"low|medium|high|critical\",\"category\":\"content|rate_limit|login_anomaly|multi_account|spam|other\",\"reason\":\"short user-facing explanation\"}. Use 'suspend' only for critical/repeated abuse.",
+          content: `You are a strict but fair content & abuse moderator for a marketplace app (Sellora).
+
+CRITICAL RULES:
+1. You are ONLY analyzing the behavior of the SENDER (the user whose activity is provided). NEVER flag someone for receiving a message.
+2. If a user REPORTS or WARNS about a scam (e.g., "this looks like a scam", "are you a scammer?", "I think this is fraud"), that is LEGITIMATE behavior — verdict must be "ok". The user is protecting themselves, not committing abuse.
+3. Only flag content where the SENDER is ACTIVELY doing something harmful: sending spam, posting scam listings, harassing others, posting illegal content, or abusing rate limits.
+4. Words like "scam", "fraud", "fake" used in a WARNING/QUESTIONING context by a buyer are NOT violations.
+5. Context matters: a buyer asking "is this legit?" or saying "this seems like a scam" is a concerned buyer, NOT a scammer.
+
+Detect ONLY when the sender is actively doing:
+- Sending spam messages (repetitive, unsolicited promotions)
+- Posting scam listings (fake products, misleading prices)
+- Hate speech or harassment directed AT others
+- Sexual or illegal content in their OWN messages/posts
+- Rate-limit abuse (too many messages/posts/logins per minute)
+- Suspicious login patterns (many IPs/devices in short time)
+- Multi-accounting
+
+Respond ONLY in JSON: {"verdict":"ok|warn|suspend","severity":"low|medium|high|critical","category":"content|rate_limit|login_anomaly|multi_account|spam|other","reason":"short user-facing explanation"}.
+Use "suspend" only for critical/repeated abuse where the sender is clearly the bad actor.`,
         },
         { role: "user", content: prompt },
       ],
@@ -60,11 +78,11 @@ export const Route = createFileRoute("/api/moderate")({
           if (userErr || !userData.user) return new Response("Unauthorized", { status: 401 });
           const userId = userData.user.id;
 
-          // Pull last 5 minutes of events
+          // Pull last 5 minutes of events FOR THIS USER ONLY (as sender)
           const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
           const { data: events } = await supabaseAdmin
             .from("moderation_events" as never)
-            .select("event_type,content,ip,user_agent,created_at")
+            .select("event_type,content,ip,user_agent,created_at,metadata")
             .eq("user_id", userId)
             .gte("created_at", since)
             .order("created_at", { ascending: false })
@@ -76,6 +94,7 @@ export const Route = createFileRoute("/api/moderate")({
             ip: string | null;
             user_agent: string | null;
             created_at: string;
+            metadata: Record<string, unknown>;
           }>;
 
           // Hard rate-limit checks (no AI needed)
@@ -95,15 +114,22 @@ export const Route = createFileRoute("/api/moderate")({
           if (loginIPs.size > 3)
             flags.push({ severity: "high", category: "login_anomaly", reason: `Logged in from ${loginIPs.size} different IPs in 5 minutes.` });
 
-          // AI pass on content
-          const contentEvents = evts.filter((e) => e.content && (e.event_type === "message" || e.event_type === "post")).slice(0, 10);
+          // AI pass on content — only messages/posts SENT by this user
+          const contentEvents = evts
+            .filter((e) => e.content && (e.event_type === "message" || e.event_type === "post"))
+            .slice(0, 10);
           let aiVerdict: AIVerdict | null = null;
           if (contentEvents.length > 0 || flags.length > 0) {
             const prompt = JSON.stringify({
-              user_id: userId,
+              analyzed_user_id: userId,
+              role: "This user is the SENDER of all content below. Only flag if THEY are doing something harmful.",
               window: "5 minutes",
-              counts: { messages: msgCount, posts: postCount, unique_login_ips: loginIPs.size },
-              recent_content: contentEvents.map((e) => ({ type: e.event_type, text: e.content?.slice(0, 500) })),
+              counts: { messages_sent: msgCount, posts_created: postCount, unique_login_ips: loginIPs.size },
+              content_sent_by_this_user: contentEvents.map((e) => ({
+                type: e.event_type,
+                text: e.content?.slice(0, 500),
+                recipient: (e.metadata as Record<string, unknown>)?.recipient_id || "unknown",
+              })),
               hard_flags: flags,
             });
             aiVerdict = await callGroq(prompt);
@@ -134,13 +160,11 @@ export const Route = createFileRoute("/api/moderate")({
               })) as never
             );
 
-            // Increment warning_count; suspend if AI says so or critical severity
             const shouldSuspend =
               aiVerdict?.verdict === "suspend" ||
               inserted.some((f) => f.severity === "critical");
 
             const update: Record<string, unknown> = {};
-            // increment via fetch
             const { data: prof } = await supabaseAdmin
               .from("profiles")
               .select("warning_count")
