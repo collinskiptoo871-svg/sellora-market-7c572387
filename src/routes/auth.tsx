@@ -12,13 +12,15 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const OTP_LENGTH = 6;
+
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "otp">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "otp" | "reset-sent">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState<string[]>(Array(8).fill(""));
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -27,7 +29,6 @@ function AuthPage() {
     if (!loading && user) navigate({ to: "/onboarding" });
   }, [user, loading, navigate]);
 
-  // Resend cooldown timer
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
@@ -40,7 +41,7 @@ function AuthPage() {
     const next = [...otp];
     next[index] = digit;
     setOtp(next);
-    if (digit && index < 7) {
+    if (digit && index < OTP_LENGTH - 1) {
       otpRefs.current[index + 1]?.focus();
     }
   };
@@ -53,11 +54,11 @@ function AuthPage() {
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8);
-    const next = [...otp];
-    for (let i = 0; i < 8; i++) next[i] = text[i] || "";
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    const next = Array(OTP_LENGTH).fill("");
+    for (let i = 0; i < OTP_LENGTH; i++) next[i] = text[i] || "";
     setOtp(next);
-    const focusIdx = Math.min(text.length, 7);
+    const focusIdx = Math.min(text.length, OTP_LENGTH - 1);
     otpRefs.current[focusIdx]?.focus();
   };
 
@@ -77,18 +78,10 @@ function AuthPage() {
           options: { emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
-        // After signup, send OTP for email verification
-        const { error: otpErr } = await supabase.auth.signInWithOtp({
-          email,
-          options: { shouldCreateUser: false },
-        });
-        if (otpErr) {
-          toast.success("Account created! Check your email for verification.");
-        } else {
-          toast.success("Account created! Enter the 8-digit code sent to your email.");
-          setMode("otp");
-          setResendCooldown(60);
-        }
+        toast.success("Account created! Enter the verification code sent to your email.");
+        setMode("otp");
+        setOtp(Array(OTP_LENGTH).fill(""));
+        setResendCooldown(60);
       } else if (mode === "signin") {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -105,7 +98,7 @@ function AuthPage() {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        toast.success("Password reset link sent to your email.");
+        setMode("reset-sent");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Authentication failed");
@@ -116,7 +109,7 @@ function AuthPage() {
 
   const verifyOtp = async () => {
     const code = otp.join("");
-    if (code.length < 6) {
+    if (code.length < OTP_LENGTH) {
       toast.error("Please enter the complete verification code.");
       return;
     }
@@ -142,14 +135,14 @@ function AuthPage() {
     if (resendCooldown > 0) return;
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.resend({
+        type: "signup",
         email,
-        options: { shouldCreateUser: false },
       });
       if (error) throw error;
       toast.success("New code sent to your email.");
       setResendCooldown(60);
-      setOtp(Array(8).fill(""));
+      setOtp(Array(OTP_LENGTH).fill(""));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to resend code.");
     } finally {
@@ -157,6 +150,7 @@ function AuthPage() {
     }
   };
 
+  // OTP verification screen
   if (mode === "otp") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[image:var(--gradient-soft)] px-4">
@@ -167,9 +161,9 @@ function AuthPage() {
         <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)]">
           <h2 className="mb-1 text-lg font-bold">Verify your email</h2>
           <p className="mb-4 text-sm text-muted-foreground">
-            Enter the 8-digit code sent to <strong>{email}</strong>
+            Enter the {OTP_LENGTH}-digit code sent to <strong>{email}</strong>
           </p>
-          <div className="mb-4 flex justify-center gap-1.5" onPaste={handleOtpPaste}>
+          <div className="mb-4 flex justify-center gap-2" onPaste={handleOtpPaste}>
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -180,7 +174,7 @@ function AuthPage() {
                 value={digit}
                 onChange={(e) => handleOtpChange(i, e.target.value)}
                 onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                className="h-11 w-9 rounded-md border border-border bg-background text-center text-lg font-semibold outline-none focus:ring-2 focus:ring-ring"
+                className="h-12 w-10 rounded-md border border-border bg-background text-center text-lg font-semibold outline-none focus:ring-2 focus:ring-ring"
               />
             ))}
           </div>
@@ -211,6 +205,40 @@ function AuthPage() {
     );
   }
 
+  // Password reset link sent screen
+  if (mode === "reset-sent") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[image:var(--gradient-soft)] px-4">
+        <Link to="/" className="mb-6 flex items-center gap-2">
+          <Store className="h-7 w-7 text-primary" />
+          <span className="text-2xl font-bold text-primary">Sellora</span>
+        </Link>
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)]">
+          <h2 className="mb-1 text-lg font-bold">Check your email</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            We sent a password reset link to <strong>{email}</strong>. Click the link in the email to set a new password.
+          </p>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Didn't receive it? Check your spam folder or try again.
+          </p>
+          <button
+            onClick={() => setMode("forgot")}
+            className="mb-2 h-11 w-full rounded-md border border-border bg-secondary text-sm font-medium hover:bg-accent"
+          >
+            Try again
+          </button>
+          <button
+            onClick={() => setMode("signin")}
+            className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
+          >
+            ← Back to sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Forgot password screen
   if (mode === "forgot") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[image:var(--gradient-soft)] px-4">
@@ -252,6 +280,7 @@ function AuthPage() {
     );
   }
 
+  // Sign in / Sign up screen
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[image:var(--gradient-soft)] px-4">
       <Link to="/" className="mb-6 flex items-center gap-2">
