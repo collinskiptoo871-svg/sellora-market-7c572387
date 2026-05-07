@@ -406,7 +406,7 @@ export type Database = {
           merchant_reference: string
           metadata: Json
           payment_method: string | null
-          pesapal_tracking_id: string | null
+          paystack_reference: string | null
           purpose: Database["public"]["Enums"]["payment_purpose"]
           raw_status_response: Json | null
           redirect_url: string | null
@@ -424,7 +424,7 @@ export type Database = {
           merchant_reference: string
           metadata?: Json
           payment_method?: string | null
-          pesapal_tracking_id?: string | null
+          paystack_reference?: string | null
           purpose?: Database["public"]["Enums"]["payment_purpose"]
           raw_status_response?: Json | null
           redirect_url?: string | null
@@ -442,37 +442,13 @@ export type Database = {
           merchant_reference?: string
           metadata?: Json
           payment_method?: string | null
-          pesapal_tracking_id?: string | null
+          paystack_reference?: string | null
           purpose?: Database["public"]["Enums"]["payment_purpose"]
           raw_status_response?: Json | null
           redirect_url?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      pesapal_config: {
-        Row: {
-          environment: string
-          id: number
-          ipn_id: string | null
-          ipn_url: string | null
-          updated_at: string
-        }
-        Insert: {
-          environment?: string
-          id?: number
-          ipn_id?: string | null
-          ipn_url?: string | null
-          updated_at?: string
-        }
-        Update: {
-          environment?: string
-          id?: number
-          ipn_id?: string | null
-          ipn_url?: string | null
-          updated_at?: string
         }
         Relationships: []
       }
