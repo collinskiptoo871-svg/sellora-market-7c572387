@@ -82,6 +82,17 @@ function Sell() {
       toast.error(`Account suspended until ${new Date(susp.until!).toLocaleString()}`);
       return;
     }
+
+    // Rate-limit: max 3 products per minute
+    const RATE_KEY = "sellora_post_timestamps";
+    const now = Date.now();
+    const stored = JSON.parse(localStorage.getItem(RATE_KEY) || "[]") as number[];
+    const recent = stored.filter((t) => now - t < 60_000);
+    if (recent.length >= 3) {
+      toast.error("You're posting too fast. Please wait a minute before listing again.");
+      return;
+    }
+
     const parsed = SellSchema.safeParse({
       title,
       price,
@@ -130,6 +141,12 @@ function Sell() {
         photos: photoUrls,
       });
       if (error) throw error;
+      // Record timestamp for rate-limiting
+      const RATE_KEY = "sellora_post_timestamps";
+      const nowTs = Date.now();
+      const storedTs = JSON.parse(localStorage.getItem(RATE_KEY) || "[]") as number[];
+      storedTs.push(nowTs);
+      localStorage.setItem(RATE_KEY, JSON.stringify(storedTs.filter((t) => nowTs - t < 120_000)));
       void recordEvent({
         type: "post",
         content: `${parsed.data.title}\n\n${parsed.data.description ?? ""}`,
