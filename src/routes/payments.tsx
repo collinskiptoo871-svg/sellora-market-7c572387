@@ -323,7 +323,7 @@ function Payments() {
 
       <p className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="h-3.5 w-3.5" />
-        All payments verified server-side via Pesapal IPN. <Link to="/settings" className="underline">Settings</Link>
+        <Link to="/settings" className="underline">Settings</Link>
       </p>
     </AppLayout>
   );
