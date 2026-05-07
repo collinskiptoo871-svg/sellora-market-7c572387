@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { initiatePesapalPayment } from "@/lib/pesapal-client";
+import { initiatePaystackPayment } from "@/lib/paystack-client";
 import { ArrowLeft, BadgeCheck, Check, Crown, Loader2, Rocket, ShieldCheck, Wallet, Zap } from "lucide-react";
 import { toast } from "sonner";
 
@@ -201,7 +201,7 @@ function Payments() {
     }
     setBusy(tier.id);
     try {
-      const { redirect_url } = await initiatePesapalPayment({
+      const { authorization_url } = await initiatePaystackPayment({
         amount: tier.price,
         currency: "KES",
         description: `Sellora — ${tier.name}`,
@@ -213,7 +213,7 @@ function Payments() {
         },
         email: user.email || undefined,
       });
-      window.location.href = redirect_url;
+      window.location.href = authorization_url;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to start payment");
       setBusy(null);
@@ -230,7 +230,7 @@ function Payments() {
         </button>
         <h1 className="text-xl font-bold">Payments</h1>
       </div>
-      <p className="mb-4 text-sm text-muted-foreground">Boost products or get verified. M-Pesa, card, or bank via Pesapal.</p>
+      <p className="mb-4 text-sm text-muted-foreground">Boost products or get verified. M-Pesa, card, or bank via Paystack.</p>
 
       <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
         <button
