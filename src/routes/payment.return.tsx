@@ -1,21 +1,19 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { verifyPesapalPayment } from "@/lib/pesapal-client";
+import { verifyPaystackPayment } from "@/lib/paystack-client";
 import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
 
 interface ReturnSearch {
-  OrderTrackingId?: string;
-  OrderMerchantReference?: string;
-  OrderNotificationType?: string;
+  reference?: string;
+  trxref?: string;
 }
 
 export const Route = createFileRoute("/payment/return")({
   head: () => ({ meta: [{ title: "Payment status — Sellora" }] }),
   validateSearch: (s: Record<string, unknown>): ReturnSearch => ({
-    OrderTrackingId: typeof s.OrderTrackingId === "string" ? s.OrderTrackingId : undefined,
-    OrderMerchantReference: typeof s.OrderMerchantReference === "string" ? s.OrderMerchantReference : undefined,
-    OrderNotificationType: typeof s.OrderNotificationType === "string" ? s.OrderNotificationType : undefined,
+    reference: typeof s.reference === "string" ? s.reference : undefined,
+    trxref: typeof s.trxref === "string" ? s.trxref : undefined,
   }),
   component: PaymentReturn,
 });
@@ -27,19 +25,18 @@ function PaymentReturn() {
   const [message, setMessage] = useState<string>("");
   const [attempts, setAttempts] = useState(0);
 
+  const reference = search.reference || search.trxref;
+
   useEffect(() => {
     let cancelled = false;
     const verify = async () => {
-      if (!search.OrderTrackingId && !search.OrderMerchantReference) {
+      if (!reference) {
         setStatus("failed");
         setMessage("Missing payment reference.");
         return;
       }
       try {
-        const r = await verifyPesapalPayment({
-          orderTrackingId: search.OrderTrackingId,
-          merchantReference: search.OrderMerchantReference,
-        });
+        const r = await verifyPaystackPayment(reference);
         if (cancelled) return;
         setStatus(r.status);
         if (r.error) setMessage(r.error);
@@ -50,12 +47,9 @@ function PaymentReturn() {
       }
     };
     verify();
-    return () => {
-      cancelled = true;
-    };
-  }, [search.OrderTrackingId, search.OrderMerchantReference, attempts]);
+    return () => { cancelled = true; };
+  }, [reference, attempts]);
 
-  // Auto-poll while pending, up to 6 times
   useEffect(() => {
     if (status !== "pending" || attempts >= 6) return;
     const t = setTimeout(() => setAttempts((a) => a + 1), 4000);
@@ -79,14 +73,11 @@ function PaymentReturn() {
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {status === "checking"
-                ? "We're confirming your payment with Pesapal."
+                ? "We're confirming your payment with Paystack."
                 : "Your payment hasn't been confirmed yet. This can take a moment."}
             </p>
             {status === "pending" && (
-              <button
-                onClick={() => setAttempts((a) => a + 1)}
-                className="mt-4 rounded-md border border-border bg-card px-4 py-2 text-sm"
-              >
+              <button onClick={() => setAttempts((a) => a + 1)} className="mt-4 rounded-md border border-border bg-card px-4 py-2 text-sm">
                 Check again
               </button>
             )}
@@ -121,10 +112,7 @@ function PaymentReturn() {
           <Link to="/dashboard" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
             Back to dashboard
           </Link>
-          <button
-            onClick={() => navigate({ to: "/settings" })}
-            className="rounded-md border border-border bg-card px-4 py-2 text-sm"
-          >
+          <button onClick={() => navigate({ to: "/settings" })} className="rounded-md border border-border bg-card px-4 py-2 text-sm">
             Settings
           </button>
         </div>
