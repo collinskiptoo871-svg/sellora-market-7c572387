@@ -12,7 +12,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const OTP_LENGTH = 6;
+const OTP_LENGTH = 8;
 
 function AuthPage() {
   const navigate = useNavigate();
