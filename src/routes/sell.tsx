@@ -141,6 +141,12 @@ function Sell() {
         photos: photoUrls,
       });
       if (error) throw error;
+      // Record timestamp for rate-limiting
+      const RATE_KEY = "sellora_post_timestamps";
+      const nowTs = Date.now();
+      const storedTs = JSON.parse(localStorage.getItem(RATE_KEY) || "[]") as number[];
+      storedTs.push(nowTs);
+      localStorage.setItem(RATE_KEY, JSON.stringify(storedTs.filter((t) => nowTs - t < 120_000)));
       void recordEvent({
         type: "post",
         content: `${parsed.data.title}\n\n${parsed.data.description ?? ""}`,
