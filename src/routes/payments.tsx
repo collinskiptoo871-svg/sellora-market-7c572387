@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { initiatePaystackPayment } from "@/lib/paystack-client";
-import { ArrowLeft, BadgeCheck, Check, Crown, Loader2, Rocket, ShieldCheck, Wallet, Zap } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Check, Crown, Loader2, Rocket, Wallet, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/payments")({
