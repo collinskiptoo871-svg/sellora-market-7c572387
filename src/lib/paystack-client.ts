@@ -12,14 +12,14 @@ export interface InitiatePaymentInput {
   last_name?: string;
 }
 
-export async function initiatePesapalPayment(input: InitiatePaymentInput) {
+export async function initiatePaystackPayment(input: InitiatePaymentInput) {
   const { data: sess } = await supabase.auth.getSession();
   const token = sess.session?.access_token;
   if (!token) throw new Error("You must be signed in to pay");
 
   let res: Response;
   try {
-    res = await fetch("/api/pesapal/initiate", {
+    res = await fetch("/api/paystack/initiate", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(input),
@@ -28,32 +28,28 @@ export async function initiatePesapalPayment(input: InitiatePaymentInput) {
     throw new Error("Network error — check your connection and try again.");
   }
 
-  let data: { redirect_url?: string; order_tracking_id?: string; merchant_reference?: string; error?: string; details?: unknown } = {};
+  let data: { authorization_url?: string; reference?: string; error?: string; details?: unknown } = {};
   try {
     data = await res.json();
   } catch {
     throw new Error(`Payment service unavailable (HTTP ${res.status}). Please try again shortly.`);
   }
 
-  if (!res.ok || !data.redirect_url) {
+  if (!res.ok || !data.authorization_url) {
     const detail = typeof data.details === "object" && data.details
       ? ` (${JSON.stringify(data.details).slice(0, 200)})`
       : "";
     throw new Error((data.error || `Failed to start payment (HTTP ${res.status})`) + detail);
   }
-  return data as { redirect_url: string; order_tracking_id: string; merchant_reference: string };
+  return data as { authorization_url: string; reference: string };
 }
 
-export async function verifyPesapalPayment(params: { orderTrackingId?: string; merchantReference?: string }) {
+export async function verifyPaystackPayment(reference: string) {
   const { data: sess } = await supabase.auth.getSession();
   const token = sess.session?.access_token;
   if (!token) throw new Error("You must be signed in");
 
-  const qs = new URLSearchParams();
-  if (params.orderTrackingId) qs.set("orderTrackingId", params.orderTrackingId);
-  if (params.merchantReference) qs.set("merchantReference", params.merchantReference);
-
-  const res = await fetch(`/api/pesapal/status?${qs.toString()}`, {
+  const res = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return (await res.json()) as {

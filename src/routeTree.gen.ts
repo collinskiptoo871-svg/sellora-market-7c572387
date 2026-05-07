@@ -36,9 +36,9 @@ import { Route as LegalDocRouteImport } from './routes/legal.$doc'
 import { Route as InboxUserIdRouteImport } from './routes/inbox_.$userId'
 import { Route as ApiModerateRouteImport } from './routes/api/moderate'
 import { Route as ProductIdEditRouteImport } from './routes/product.$id_.edit'
-import { Route as ApiPesapalStatusRouteImport } from './routes/api/pesapal.status'
-import { Route as ApiPesapalInitiateRouteImport } from './routes/api/pesapal.initiate'
-import { Route as ApiPublicPesapalIpnRouteImport } from './routes/api/public/pesapal.ipn'
+import { Route as ApiPaystackVerifyRouteImport } from './routes/api/paystack.verify'
+import { Route as ApiPaystackInitiateRouteImport } from './routes/api/paystack.initiate'
+import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack.webhook'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -175,21 +175,22 @@ const ProductIdEditRoute = ProductIdEditRouteImport.update({
   path: '/product/$id/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPesapalStatusRoute = ApiPesapalStatusRouteImport.update({
-  id: '/api/pesapal/status',
-  path: '/api/pesapal/status',
+const ApiPaystackVerifyRoute = ApiPaystackVerifyRouteImport.update({
+  id: '/api/paystack/verify',
+  path: '/api/paystack/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPesapalInitiateRoute = ApiPesapalInitiateRouteImport.update({
-  id: '/api/pesapal/initiate',
-  path: '/api/pesapal/initiate',
+const ApiPaystackInitiateRoute = ApiPaystackInitiateRouteImport.update({
+  id: '/api/paystack/initiate',
+  path: '/api/paystack/initiate',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPesapalIpnRoute = ApiPublicPesapalIpnRouteImport.update({
-  id: '/api/public/pesapal/ipn',
-  path: '/api/public/pesapal/ipn',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const ApiPublicPaystackWebhookRoute =
+  ApiPublicPaystackWebhookRouteImport.update({
+    id: '/api/public/paystack/webhook',
+    path: '/api/public/paystack/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -218,10 +219,10 @@ export interface FileRoutesByFullPath {
   '/payment/return': typeof PaymentReturnRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$id': typeof ShopIdRoute
-  '/api/pesapal/initiate': typeof ApiPesapalInitiateRoute
-  '/api/pesapal/status': typeof ApiPesapalStatusRoute
+  '/api/paystack/initiate': typeof ApiPaystackInitiateRoute
+  '/api/paystack/verify': typeof ApiPaystackVerifyRoute
   '/product/$id/edit': typeof ProductIdEditRoute
-  '/api/public/pesapal/ipn': typeof ApiPublicPesapalIpnRoute
+  '/api/public/paystack/webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -250,10 +251,10 @@ export interface FileRoutesByTo {
   '/payment/return': typeof PaymentReturnRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$id': typeof ShopIdRoute
-  '/api/pesapal/initiate': typeof ApiPesapalInitiateRoute
-  '/api/pesapal/status': typeof ApiPesapalStatusRoute
+  '/api/paystack/initiate': typeof ApiPaystackInitiateRoute
+  '/api/paystack/verify': typeof ApiPaystackVerifyRoute
   '/product/$id/edit': typeof ProductIdEditRoute
-  '/api/public/pesapal/ipn': typeof ApiPublicPesapalIpnRoute
+  '/api/public/paystack/webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -283,10 +284,10 @@ export interface FileRoutesById {
   '/payment/return': typeof PaymentReturnRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$id': typeof ShopIdRoute
-  '/api/pesapal/initiate': typeof ApiPesapalInitiateRoute
-  '/api/pesapal/status': typeof ApiPesapalStatusRoute
+  '/api/paystack/initiate': typeof ApiPaystackInitiateRoute
+  '/api/paystack/verify': typeof ApiPaystackVerifyRoute
   '/product/$id_/edit': typeof ProductIdEditRoute
-  '/api/public/pesapal/ipn': typeof ApiPublicPesapalIpnRoute
+  '/api/public/paystack/webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -317,10 +318,10 @@ export interface FileRouteTypes {
     | '/payment/return'
     | '/product/$id'
     | '/shop/$id'
-    | '/api/pesapal/initiate'
-    | '/api/pesapal/status'
+    | '/api/paystack/initiate'
+    | '/api/paystack/verify'
     | '/product/$id/edit'
-    | '/api/public/pesapal/ipn'
+    | '/api/public/paystack/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -349,10 +350,10 @@ export interface FileRouteTypes {
     | '/payment/return'
     | '/product/$id'
     | '/shop/$id'
-    | '/api/pesapal/initiate'
-    | '/api/pesapal/status'
+    | '/api/paystack/initiate'
+    | '/api/paystack/verify'
     | '/product/$id/edit'
-    | '/api/public/pesapal/ipn'
+    | '/api/public/paystack/webhook'
   id:
     | '__root__'
     | '/'
@@ -381,10 +382,10 @@ export interface FileRouteTypes {
     | '/payment/return'
     | '/product/$id'
     | '/shop/$id'
-    | '/api/pesapal/initiate'
-    | '/api/pesapal/status'
+    | '/api/paystack/initiate'
+    | '/api/paystack/verify'
     | '/product/$id_/edit'
-    | '/api/public/pesapal/ipn'
+    | '/api/public/paystack/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -414,10 +415,10 @@ export interface RootRouteChildren {
   PaymentReturnRoute: typeof PaymentReturnRoute
   ProductIdRoute: typeof ProductIdRoute
   ShopIdRoute: typeof ShopIdRoute
-  ApiPesapalInitiateRoute: typeof ApiPesapalInitiateRoute
-  ApiPesapalStatusRoute: typeof ApiPesapalStatusRoute
+  ApiPaystackInitiateRoute: typeof ApiPaystackInitiateRoute
+  ApiPaystackVerifyRoute: typeof ApiPaystackVerifyRoute
   ProductIdEditRoute: typeof ProductIdEditRoute
-  ApiPublicPesapalIpnRoute: typeof ApiPublicPesapalIpnRoute
+  ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -611,25 +612,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/pesapal/status': {
-      id: '/api/pesapal/status'
-      path: '/api/pesapal/status'
-      fullPath: '/api/pesapal/status'
-      preLoaderRoute: typeof ApiPesapalStatusRouteImport
+    '/api/paystack/verify': {
+      id: '/api/paystack/verify'
+      path: '/api/paystack/verify'
+      fullPath: '/api/paystack/verify'
+      preLoaderRoute: typeof ApiPaystackVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/pesapal/initiate': {
-      id: '/api/pesapal/initiate'
-      path: '/api/pesapal/initiate'
-      fullPath: '/api/pesapal/initiate'
-      preLoaderRoute: typeof ApiPesapalInitiateRouteImport
+    '/api/paystack/initiate': {
+      id: '/api/paystack/initiate'
+      path: '/api/paystack/initiate'
+      fullPath: '/api/paystack/initiate'
+      preLoaderRoute: typeof ApiPaystackInitiateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/pesapal/ipn': {
-      id: '/api/public/pesapal/ipn'
-      path: '/api/public/pesapal/ipn'
-      fullPath: '/api/public/pesapal/ipn'
-      preLoaderRoute: typeof ApiPublicPesapalIpnRouteImport
+    '/api/public/paystack/webhook': {
+      id: '/api/public/paystack/webhook'
+      path: '/api/public/paystack/webhook'
+      fullPath: '/api/public/paystack/webhook'
+      preLoaderRoute: typeof ApiPublicPaystackWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -662,10 +663,10 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentReturnRoute: PaymentReturnRoute,
   ProductIdRoute: ProductIdRoute,
   ShopIdRoute: ShopIdRoute,
-  ApiPesapalInitiateRoute: ApiPesapalInitiateRoute,
-  ApiPesapalStatusRoute: ApiPesapalStatusRoute,
+  ApiPaystackInitiateRoute: ApiPaystackInitiateRoute,
+  ApiPaystackVerifyRoute: ApiPaystackVerifyRoute,
   ProductIdEditRoute: ProductIdEditRoute,
-  ApiPublicPesapalIpnRoute: ApiPublicPesapalIpnRoute,
+  ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

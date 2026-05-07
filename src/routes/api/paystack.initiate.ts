@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { ensureIpn, getPesapalToken, PESAPAL_BASE } from "@/lib/pesapal.server";
+import { initializeTransaction } from "@/lib/paystack.server";
 import type { Database } from "@/integrations/supabase/types";
 
 interface InitiateBody {
@@ -16,12 +16,11 @@ interface InitiateBody {
   last_name?: string;
 }
 
-export const Route = createFileRoute("/api/pesapal/initiate")({
+export const Route = createFileRoute("/api/paystack/initiate")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
-          // Authenticate user via bearer token
           const auth = request.headers.get("authorization");
           if (!auth?.startsWith("Bearer ")) {
             return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,7 +45,6 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
             return Response.json({ error: "Amount too large" }, { status: 400 });
           }
 
-          // Require completed profile (name + country) before allowing payments
           const { data: prof } = await supabaseAdmin
             .from("profiles")
             .select("display_name,country")
@@ -59,20 +57,12 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
             );
           }
 
-          // Build callback + IPN URLs from request origin
           const origin = new URL(request.url).origin;
           const callbackUrl = `${origin}/payment/return`;
-          const ipnUrl = `${origin}/api/public/pesapal/ipn`;
-
-          let ipnId: string;
-          try {
-            ipnId = await ensureIpn(ipnUrl);
-          } catch (e) {
-            console.error("Pesapal ensureIpn error:", e);
-            return Response.json({ error: "Could not register payment notification URL." }, { status: 502 });
-          }
-
           const merchantReference = `SLR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+          // Paystack amount is in smallest currency unit (cents/kobo)
+          const amountInSmallestUnit = Math.round(body.amount * 100);
 
           const { error: insertErr } = await supabaseAdmin.from("payment_orders").insert({
             user_id: userId,
@@ -89,66 +79,44 @@ export const Route = createFileRoute("/api/pesapal/initiate")({
             return Response.json({ error: "Failed to create order" }, { status: 500 });
           }
 
-          let accessToken: string;
-          try {
-            accessToken = await getPesapalToken();
-          } catch (e) {
-            console.error("Pesapal getPesapalToken error:", e);
-            return Response.json({ error: "Pesapal authentication failed. Please try again." }, { status: 502 });
-          }
+          const email = body.email || (claims.claims as Record<string, unknown>).email as string || "customer@sellora.app";
 
-          const submit = await fetch(`${PESAPAL_BASE}/api/Transactions/SubmitOrderRequest`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              Authorization: `Bearer ${accessToken}`,
+          const result = await initializeTransaction({
+            email,
+            amount: amountInSmallestUnit,
+            currency: body.currency || "KES",
+            reference: merchantReference,
+            callback_url: callbackUrl,
+            metadata: {
+              user_id: userId,
+              purpose: body.purpose || "other",
+              ...(body.metadata || {}),
             },
-            body: JSON.stringify({
-              id: merchantReference,
-              currency: body.currency || "KES",
-              amount: body.amount,
-              description: body.description.slice(0, 100),
-              callback_url: callbackUrl,
-              notification_id: ipnId,
-              billing_address: {
-                email_address: body.email || claims.claims.email || undefined,
-                phone_number: body.phone || undefined,
-                first_name: body.first_name || undefined,
-                last_name: body.last_name || undefined,
-              },
-            }),
           });
-          const submitData = (await submit.json()) as {
-            order_tracking_id?: string;
-            redirect_url?: string;
-            merchant_reference?: string;
-            error?: unknown;
-          };
-          if (!submit.ok || !submitData.order_tracking_id || !submitData.redirect_url) {
+
+          if (!result.status || !result.data) {
             await supabaseAdmin
               .from("payment_orders")
-              .update({ status: "failed", raw_status_response: submitData as never })
+              .update({ status: "failed", raw_status_response: result as never })
               .eq("merchant_reference", merchantReference);
-            console.error("Pesapal SubmitOrderRequest failed:", submitData);
-            return Response.json({ error: "Pesapal rejected the order. Please try again." }, { status: 502 });
+            console.error("Paystack initialize failed:", result);
+            return Response.json({ error: result.message || "Paystack rejected the order." }, { status: 502 });
           }
 
           await supabaseAdmin
             .from("payment_orders")
             .update({
-              pesapal_tracking_id: submitData.order_tracking_id,
-              redirect_url: submitData.redirect_url,
+              paystack_reference: result.data.reference,
+              redirect_url: result.data.authorization_url,
             })
             .eq("merchant_reference", merchantReference);
 
           return Response.json({
-            redirect_url: submitData.redirect_url,
-            order_tracking_id: submitData.order_tracking_id,
-            merchant_reference: merchantReference,
+            authorization_url: result.data.authorization_url,
+            reference: result.data.reference,
           });
         } catch (err) {
-          console.error("Pesapal initiate error:", err);
+          console.error("Paystack initiate error:", err);
           return Response.json({ error: "Server error" }, { status: 500 });
         }
       },
