@@ -321,8 +321,7 @@ function Payments() {
         </ul>
       )}
 
-      <p className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-        <ShieldCheck className="h-3.5 w-3.5" />
+      <p className="mt-6 text-xs text-muted-foreground">
         <Link to="/settings" className="underline">Settings</Link>
       </p>
     </AppLayout>
