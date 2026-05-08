@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { loadInitialTheme } from "@/lib/theme";
 import { loadInitialLanguage } from "@/lib/i18n";
 import { useNotifications } from "@/hooks/use-notifications";
+import { registerPwa } from "@/lib/pwa";
 
 import appCss from "../styles.css?url";
 
@@ -71,6 +72,7 @@ function RootComponent() {
   useEffect(() => {
     loadInitialTheme();
     loadInitialLanguage();
+    registerPwa();
   }, []);
   return (
     <AuthProvider>

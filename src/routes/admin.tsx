@@ -12,6 +12,7 @@ export const Route = createFileRoute("/admin")({
 
 interface Report { id: string; reason: string; details: string | null; severity: number; resolved: boolean; created_at: string; reporter_id: string; target_user_id: string | null; target_product_id: string | null }
 interface Appeal { id: string; user_id: string; message: string; status: "pending" | "approved" | "rejected"; admin_response: string | null; created_at: string }
+interface PendingProduct { id: string; title: string; price: number; currency: string; seller_id: string; photos: string[]; location: string | null; created_at: string }
 
 function Admin() {
   const { user, loading } = useAuth();
@@ -19,6 +20,7 @@ function Admin() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [appeals, setAppeals] = useState<Appeal[]>([]);
+  const [pending, setPending] = useState<PendingProduct[]>([]);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [stats, setStats] = useState({ users: 0, products: 0, reports: 0 });
 
@@ -30,7 +32,7 @@ function Admin() {
       const admin = (data ?? []).some((r) => r.role === "admin");
       setIsAdmin(admin);
       if (!admin) return;
-      const [{ data: rep }, { count: pCount }, { count: uCount }, { data: ap }] = await Promise.all([
+      const [{ data: rep }, { count: pCount }, { count: uCount }, { data: ap }, { data: pend }] = await Promise.all([
         supabase.from("reports").select("*").eq("resolved", false).order("severity", { ascending: false }),
         supabase.from("products").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
@@ -39,9 +41,15 @@ function Admin() {
           .select("*")
           .eq("status", "pending")
           .order("created_at", { ascending: false }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("products") as any)
+          .select("id,title,price,currency,seller_id,photos,location,created_at")
+          .eq("status", "pending_review")
+          .order("created_at", { ascending: false }),
       ]);
       setReports((rep as Report[]) ?? []);
       setAppeals((ap as Appeal[]) ?? []);
+      setPending((pend as PendingProduct[]) ?? []);
       setStats({ users: uCount ?? 0, products: pCount ?? 0, reports: rep?.length ?? 0 });
     })();
   }, [user, loading, navigate]);
@@ -66,6 +74,16 @@ function Admin() {
     toast.success(status === "approved" ? "Appeal approved — user restored" : "Appeal rejected");
   };
 
+  const decidePending = async (id: string, approve: boolean) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("products") as any)
+      .update({ status: approve ? "active" : "archived" })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    setPending((list) => list.filter((p) => p.id !== id));
+    toast.success(approve ? "Listing approved & published" : "Listing rejected");
+  };
+
   return (
     <AppLayout>
       <h1 className="mb-3 text-xl font-bold">Admin</h1>
@@ -77,6 +95,26 @@ function Admin() {
           </div>
         ))}
       </div>
+
+      <h2 className="mt-5 mb-2 text-lg font-bold">Listings awaiting review ({pending.length})</h2>
+      <ul className="space-y-2">
+        {pending.length === 0 && (
+          <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No expensive listings pending review</p>
+        )}
+        {pending.map((p) => (
+          <li key={p.id} className="flex gap-3 rounded-lg border border-border bg-card p-3">
+            {p.photos?.[0] && <img src={p.photos[0]} alt="" className="h-16 w-16 rounded-md object-cover" />}
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-1 text-sm font-medium">{p.title}</p>
+              <p className="text-xs text-muted-foreground">{p.currency} {Number(p.price).toLocaleString()} · {p.location ?? "—"}</p>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => decidePending(p.id, true)} className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white">Approve</button>
+                <button onClick={() => decidePending(p.id, false)} className="rounded-md bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground">Reject</button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
 
       <h2 className="mt-5 mb-2 text-lg font-bold">Report queue</h2>
       <ul className="space-y-2">

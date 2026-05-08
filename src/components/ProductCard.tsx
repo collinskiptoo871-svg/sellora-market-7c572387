@@ -3,6 +3,8 @@ import { Eye, Heart, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserCurrency } from "@/hooks/use-user-currency";
+import { formatMoney } from "@/lib/currency";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
@@ -19,11 +21,30 @@ export interface ProductCardData {
 
 export function ProductCard({ p }: { p: ProductCardData }) {
   const { user } = useAuth();
+  const { currency: userCurrency, convertTo } = useUserCurrency();
   const [saved, setSaved] = useState(false);
+  const [displayPrice, setDisplayPrice] = useState<string>(`${p.currency} ${p.price.toLocaleString()}`);
   const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null }>({
     display_name: null,
     avatar_url: null,
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        if (userCurrency && userCurrency !== p.currency) {
+          const v = await convertTo(p.price, p.currency);
+          if (!cancelled) setDisplayPrice(`${formatMoney(v, userCurrency)} · ${p.currency} ${p.price.toLocaleString()}`);
+        } else {
+          setDisplayPrice(formatMoney(p.price, p.currency));
+        }
+      } catch {
+        setDisplayPrice(`${p.currency} ${p.price.toLocaleString()}`);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [p.price, p.currency, userCurrency, convertTo]);
 
   useEffect(() => {
     supabase.from("profiles").select("display_name,avatar_url").eq("user_id", p.seller_id).maybeSingle()
@@ -78,9 +99,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
         </button>
       </div>
       <div className="space-y-1 p-3">
-        <p className="text-sm font-bold text-primary">
-          {p.currency} {p.price.toLocaleString()}
-        </p>
+        <p className="text-sm font-bold text-primary">{displayPrice}</p>
         <p className="line-clamp-1 text-sm font-medium text-foreground">{p.title}</p>
         {p.location && (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">

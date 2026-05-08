@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { recordEvent, isSuspended } from "@/lib/moderation-client";
 import { CATEGORIES } from "@/lib/countries";
 import { describeGeoError, requestGeolocation } from "@/lib/geo";
+import { detectBanned } from "@/lib/banned-items";
+import { currencyForCountry, toUsd, USD_REVIEW_THRESHOLD, formatMoney } from "@/lib/currency";
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, Loader2, MapPin, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -105,6 +107,19 @@ function Sell() {
     }
     if (photos.length === 0) return toast.error("At least one photo is required");
 
+    // Block illegal / restricted items
+    const banned = detectBanned(`${parsed.data.title} ${parsed.data.description ?? ""}`);
+    if (banned) {
+      toast.error(`This listing appears to contain a restricted item ("${banned}"). It cannot be posted.`);
+      void recordEvent({
+        type: "post",
+        content: `[BLOCKED:${banned}] ${parsed.data.title}`,
+        userId: user.id,
+        metadata: { blocked: true, keyword: banned },
+      });
+      return;
+    }
+
     // Always re-verify GPS before posting — never trust stale state
     setBusy(true);
     let verifiedCountry = country;
@@ -121,6 +136,34 @@ function Sell() {
       return toast.error("Location must be verified to list. " + describeGeoError(err));
     }
 
+    // Determine USD value & whether the listing needs admin review
+    const localCurrency = currencyForCountry(verifiedCountry);
+    let usdValue = parsed.data.price;
+    try {
+      usdValue = await toUsd(parsed.data.price, localCurrency);
+    } catch {
+      // If FX fails, fall back to raw amount and warn — still safe to use threshold.
+    }
+    const isExpensive = usdValue >= USD_REVIEW_THRESHOLD;
+
+    // Expensive items require an approved KYC submission
+    if (isExpensive) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: kyc } = await (supabase.from("kyc_submissions") as any)
+        .select("status")
+        .eq("user_id", user.id)
+        .eq("status", "approved")
+        .maybeSingle();
+      if (!kyc) {
+        setBusy(false);
+        toast.error(
+          `Listings over ${formatMoney(USD_REVIEW_THRESHOLD, "USD")} require identity verification. Please complete KYC first.`,
+        );
+        navigate({ to: "/kyc" });
+        return;
+      }
+    }
+
     try {
       const photoUrls: string[] = [];
       for (const f of photos) {
@@ -129,16 +172,19 @@ function Sell() {
         if (error) throw error;
         photoUrls.push(supabase.storage.from("products").getPublicUrl(path).data.publicUrl);
       }
-      const { error } = await supabase.from("products").insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("products") as any).insert({
         seller_id: user.id,
         title: parsed.data.title,
         price: parsed.data.price,
+        currency: localCurrency,
         description: parsed.data.description,
         condition,
         category: parsed.data.category,
         location: `${verifiedCity || "—"}, ${verifiedCountry}`,
         shipping_available: shipping,
         photos: photoUrls,
+        status: isExpensive ? "pending_review" : "active",
       });
       if (error) throw error;
       // Record timestamp for rate-limiting
@@ -153,7 +199,11 @@ function Sell() {
         userId: user.id,
         metadata: { category: parsed.data.category, price: parsed.data.price },
       });
-      toast.success("Product listed!");
+      toast.success(
+        isExpensive
+          ? "Submitted for review — your listing will appear once an admin approves it."
+          : "Product listed!",
+      );
       navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to list product");
