@@ -99,12 +99,31 @@ function AuthPage() {
           setBusy(false);
           return;
         }
-        const { error } = await supabase.auth.signUp({
+
+        // Device-based signup throttle: max 2 accounts per device.
+        const fingerprint = getFingerprint();
+        const ip = await getIp();
+        const guard = await checkAllowed({ data: { email, fingerprint, ip } });
+        if (!guard.allowed) {
+          if (guard.warning) {
+            toast.error(guard.message, { duration: 8000 });
+          } else {
+            toast.error(guard.message);
+          }
+          setMode("signin");
+          setBusy(false);
+          return;
+        }
+
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
+        if (signUpData.user?.id) {
+          void recordSuccess({ data: { email, fingerprint, ip, userId: signUpData.user.id } });
+        }
         toast.success("Account created! Enter the verification code sent to your email.");
         setMode("otp");
         setOtp(Array(OTP_LENGTH).fill(""));
