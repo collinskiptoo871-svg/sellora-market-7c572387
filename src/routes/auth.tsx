@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { recordEvent } from "@/lib/moderation-client";
 import { isDisposableEmail } from "@/lib/disposable-emails";
+import { checkSignupAllowed, recordSignupSuccess } from "@/lib/signup-guard.functions";
 import { Store } from "lucide-react";
 import { toast } from "sonner";
 
