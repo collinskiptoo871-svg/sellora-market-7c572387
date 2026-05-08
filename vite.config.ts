@@ -6,6 +6,7 @@ export default defineConfig({
     plugins: [
       VitePWA({
         registerType: "autoUpdate",
+        injectRegister: false,
         devOptions: { enabled: false },
         manifest: {
           name: "Sellora Marketplace",
