@@ -868,7 +868,12 @@ export type Database = {
         | "cancelled"
         | "reversed"
       product_condition: "new" | "like_new" | "used" | "refurbished"
-      product_status: "active" | "archived" | "sold" | "deleted"
+      product_status:
+        | "active"
+        | "archived"
+        | "sold"
+        | "deleted"
+        | "pending_review"
       report_reason:
         | "misleading"
         | "counterfeit"
@@ -1019,7 +1024,13 @@ export const Constants = {
         "reversed",
       ],
       product_condition: ["new", "like_new", "used", "refurbished"],
-      product_status: ["active", "archived", "sold", "deleted"],
+      product_status: [
+        "active",
+        "archived",
+        "sold",
+        "deleted",
+        "pending_review",
+      ],
       report_reason: [
         "misleading",
         "counterfeit",
