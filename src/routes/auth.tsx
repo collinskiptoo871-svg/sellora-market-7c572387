@@ -26,6 +26,31 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const checkAllowed = useServerFn(checkSignupAllowed);
+  const recordSuccess = useServerFn(recordSignupSuccess);
+
+  // Generate / read a stable device fingerprint (also stored by moderation-client).
+  const getFingerprint = (): string => {
+    if (typeof window === "undefined") return "ssr";
+    const key = "sellora_device_fp";
+    let fp = localStorage.getItem(key);
+    if (!fp) {
+      const seed = `${navigator.userAgent}|${navigator.language}|${screen.width}x${screen.height}|${Intl.DateTimeFormat().resolvedOptions().timeZone}|${Math.random().toString(36).slice(2)}`;
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+      fp = `fp_${Math.abs(h).toString(36)}_${Date.now().toString(36)}`;
+      localStorage.setItem(key, fp);
+    }
+    return fp;
+  };
+
+  const getIp = async (): Promise<string | null> => {
+    try {
+      const r = await fetch("https://api.ipify.org?format=json");
+      const j = await r.json();
+      return j.ip ?? null;
+    } catch { return null; }
+  };
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/onboarding" });
