@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { recordEvent } from "@/lib/moderation-client";
 import { isDisposableEmail } from "@/lib/disposable-emails";
+import { checkSignupAllowed, recordSignupSuccess } from "@/lib/signup-guard.functions";
 import { Store } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +26,31 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const checkAllowed = useServerFn(checkSignupAllowed);
+  const recordSuccess = useServerFn(recordSignupSuccess);
+
+  // Generate / read a stable device fingerprint (also stored by moderation-client).
+  const getFingerprint = (): string => {
+    if (typeof window === "undefined") return "ssr";
+    const key = "sellora_device_fp";
+    let fp = localStorage.getItem(key);
+    if (!fp) {
+      const seed = `${navigator.userAgent}|${navigator.language}|${screen.width}x${screen.height}|${Intl.DateTimeFormat().resolvedOptions().timeZone}|${Math.random().toString(36).slice(2)}`;
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+      fp = `fp_${Math.abs(h).toString(36)}_${Date.now().toString(36)}`;
+      localStorage.setItem(key, fp);
+    }
+    return fp;
+  };
+
+  const getIp = async (): Promise<string | null> => {
+    try {
+      const r = await fetch("https://api.ipify.org?format=json");
+      const j = await r.json();
+      return j.ip ?? null;
+    } catch { return null; }
+  };
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/onboarding" });
@@ -72,12 +99,31 @@ function AuthPage() {
           setBusy(false);
           return;
         }
-        const { error } = await supabase.auth.signUp({
+
+        // Device-based signup throttle: max 2 accounts per device.
+        const fingerprint = getFingerprint();
+        const ip = await getIp();
+        const guard = await checkAllowed({ data: { email, fingerprint, ip } });
+        if (!guard.allowed) {
+          if (guard.warning) {
+            toast.error(guard.message, { duration: 8000 });
+          } else {
+            toast.error(guard.message);
+          }
+          setMode("signin");
+          setBusy(false);
+          return;
+        }
+
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
+        if (signUpData.user?.id) {
+          void recordSuccess({ data: { email, fingerprint, ip, userId: signUpData.user.id } });
+        }
         toast.success("Account created! Enter the verification code sent to your email.");
         setMode("otp");
         setOtp(Array(OTP_LENGTH).fill(""));

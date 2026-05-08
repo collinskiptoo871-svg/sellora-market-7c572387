@@ -270,6 +270,12 @@ function Chat() {
       toast.error("Message is too long (max 2000 characters).");
       return;
     }
+    // Block links / URLs in messages to prevent off-platform scams & phishing.
+    const linkRegex = /(https?:\/\/|www\.|\b[\w-]+\.(?:com|net|org|io|co|app|xyz|info|biz|me|ly|gg|to|tv|us|uk|ke|ng|za|in|store|shop|online|live|click|link|site)\b)/i;
+    if (linkRegex.test(text)) {
+      toast.error("Links aren't allowed in messages. Please share details directly here.");
+      return;
+    }
     if (sending) return;
     if (user.id === userId) {
       toast.info("You can't message yourself");

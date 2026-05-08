@@ -700,6 +700,39 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_attempts: {
+        Row: {
+          created_at: string
+          email: string | null
+          fingerprint: string | null
+          id: string
+          ip: string | null
+          reason: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       typing_status: {
         Row: {
           is_typing: boolean
