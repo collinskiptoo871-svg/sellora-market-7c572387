@@ -112,10 +112,10 @@ function Sell() {
     if (banned) {
       toast.error(`This listing appears to contain a restricted item ("${banned}"). It cannot be posted.`);
       void recordEvent({
-        type: "banned_listing_blocked",
-        content: parsed.data.title,
+        type: "post",
+        content: `[BLOCKED:${banned}] ${parsed.data.title}`,
         userId: user.id,
-        metadata: { keyword: banned },
+        metadata: { blocked: true, keyword: banned },
       });
       return;
     }
