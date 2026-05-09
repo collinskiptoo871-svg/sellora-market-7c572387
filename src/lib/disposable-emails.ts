@@ -82,8 +82,41 @@ const DISPOSABLE_DOMAINS = new Set([
   "zoemail.org",
 ]);
 
+// Patterns commonly found in disposable / throwaway / temp-mail providers.
+const DISPOSABLE_PATTERNS = [
+  /(^|\.)temp(mail|-mail|email|inbox)?\./,
+  /(^|\.)trash(mail|email)?\./,
+  /(^|\.)throw[-_]?away/,
+  /(^|\.)disposable/,
+  /(^|\.)fake[-_]?(mail|inbox)/,
+  /(^|\.)burner/,
+  /(^|\.)mailinator/,
+  /(^|\.)guerrilla/,
+  /(^|\.)yopmail/,
+  /(^|\.)10minute/,
+  /(^|\.)minutemail/,
+  /(^|\.)spam(box|gourmet|fighter|free)/,
+  /(^|\.)getnada/,
+  /(^|\.)maildrop/,
+  /(^|\.)mohmal/,
+  /(^|\.)sharklasers/,
+  /(^|\.)dispostable/,
+  /\.tk$/,
+  /\.ml$/,
+  /\.ga$/,
+  /\.cf$/,
+  /\.gq$/,
+];
+
 export function isDisposableEmail(email: string): boolean {
-  const domain = email.split("@")[1]?.toLowerCase();
+  const domain = email.split("@")[1]?.toLowerCase().trim();
   if (!domain) return false;
-  return DISPOSABLE_DOMAINS.has(domain);
+  if (DISPOSABLE_DOMAINS.has(domain)) return true;
+  // Match against parent domain too (e.g. foo.mailinator.com)
+  const parts = domain.split(".");
+  for (let i = 1; i < parts.length; i++) {
+    const sub = parts.slice(i).join(".");
+    if (DISPOSABLE_DOMAINS.has(sub)) return true;
+  }
+  return DISPOSABLE_PATTERNS.some((re) => re.test(domain));
 }
