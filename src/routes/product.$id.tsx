@@ -249,23 +249,29 @@ function ProductPage() {
 
       <section className="mt-4 rounded-lg border border-border bg-card p-4">
         <h2 className="mb-2 font-semibold">Write a Review</h2>
-        <div className="mb-2 flex gap-1">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} onClick={() => setRating(n)} aria-label={`${n} stars`}>
-              <Star className={`h-6 w-6 ${n <= rating ? "fill-warning text-warning" : "text-muted-foreground"}`} />
+        {seller && !seller.verified ? (
+          <p className="text-sm text-muted-foreground">Reviews are only available for verified sellers.</p>
+        ) : (
+          <>
+            <div className="mb-2 flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} onClick={() => setRating(n)} aria-label={`${n} stars`}>
+                  <Star className={`h-6 w-6 ${n <= rating ? "fill-warning text-warning" : "text-muted-foreground"}`} />
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your experience..."
+              maxLength={500}
+              className="min-h-[80px] w-full rounded-md border border-border bg-background p-2 text-sm"
+            />
+            <button onClick={submitReview} className="mt-2 rounded-md bg-primary/30 px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary">
+              Submit
             </button>
-          ))}
-        </div>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Share your experience..."
-          maxLength={500}
-          className="min-h-[80px] w-full rounded-md border border-border bg-background p-2 text-sm"
-        />
-        <button onClick={submitReview} className="mt-2 rounded-md bg-primary/30 px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary">
-          Submit
-        </button>
+          </>
+        )}
       </section>
 
       <Dialog>
