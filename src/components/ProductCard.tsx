@@ -24,9 +24,10 @@ export function ProductCard({ p }: { p: ProductCardData }) {
   const { currency: userCurrency, convertTo } = useUserCurrency();
   const [saved, setSaved] = useState(false);
   const [displayPrice, setDisplayPrice] = useState<string>(`${p.currency} ${p.price.toLocaleString()}`);
-  const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null }>({
+  const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null; suspended_until: string | null }>({
     display_name: null,
     avatar_url: null,
+    suspended_until: null,
   });
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
   }, [p.price, p.currency, userCurrency, convertTo]);
 
   useEffect(() => {
-    supabase.from("profiles").select("display_name,avatar_url").eq("user_id", p.seller_id).maybeSingle()
+    supabase.from("profiles").select("display_name,avatar_url,suspended_until").eq("user_id", p.seller_id).maybeSingle()
       .then(({ data }) => data && setSeller(data));
     if (user) {
       supabase.from("favorites").select("id").eq("user_id", user.id).eq("product_id", p.id).maybeSingle()
