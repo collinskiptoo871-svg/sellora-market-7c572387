@@ -39,7 +39,7 @@ function ProductPage() {
   const blocked = useBlockedSellers();
   const navigate = useNavigate();
   const [p, setP] = useState<Product | null>(null);
-  const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null; location: string | null } | null>(null);
+  const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null; location: string | null; verified: boolean } | null>(null);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [saved, setSaved] = useState(false);
   const [rating, setRating] = useState(5);
@@ -56,10 +56,10 @@ function ProductPage() {
       setP(data as Product);
       const { data: prof } = await supabase
         .from("profiles")
-        .select("display_name,avatar_url,location")
+        .select("display_name,avatar_url,location,verified")
         .eq("user_id", data.seller_id)
         .maybeSingle();
-      if (!cancelled) setSeller(prof ?? null);
+      if (!cancelled) setSeller(prof ? { ...prof, verified: !!prof.verified } : null);
     });
     if (user) {
       supabase.from("favorites").select("id").eq("user_id", user.id).eq("product_id", id).maybeSingle()
@@ -111,12 +111,19 @@ function ProductPage() {
 
   const submitReview = async () => {
     if (!user) return navigate({ to: "/auth" });
-    const { error } = await supabase.from("reviews").upsert({
-      seller_id: p.seller_id,
-      reviewer_id: user.id,
-      rating,
-      comment: comment.trim() || null,
-    });
+    if (!seller?.verified) {
+      toast.error("Reviews are only allowed for verified sellers.");
+      return;
+    }
+    const { error } = await supabase.from("reviews").upsert(
+      {
+        seller_id: p.seller_id,
+        reviewer_id: user.id,
+        rating,
+        comment: comment.trim() || null,
+      },
+      { onConflict: "seller_id,reviewer_id" }
+    );
     if (error) toast.error(error.message);
     else {
       toast.success("Review submitted");
@@ -242,23 +249,29 @@ function ProductPage() {
 
       <section className="mt-4 rounded-lg border border-border bg-card p-4">
         <h2 className="mb-2 font-semibold">Write a Review</h2>
-        <div className="mb-2 flex gap-1">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} onClick={() => setRating(n)} aria-label={`${n} stars`}>
-              <Star className={`h-6 w-6 ${n <= rating ? "fill-warning text-warning" : "text-muted-foreground"}`} />
+        {seller && !seller.verified ? (
+          <p className="text-sm text-muted-foreground">Reviews are only available for verified sellers.</p>
+        ) : (
+          <>
+            <div className="mb-2 flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} onClick={() => setRating(n)} aria-label={`${n} stars`}>
+                  <Star className={`h-6 w-6 ${n <= rating ? "fill-warning text-warning" : "text-muted-foreground"}`} />
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your experience..."
+              maxLength={500}
+              className="min-h-[80px] w-full rounded-md border border-border bg-background p-2 text-sm"
+            />
+            <button onClick={submitReview} className="mt-2 rounded-md bg-primary/30 px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary">
+              Submit
             </button>
-          ))}
-        </div>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Share your experience..."
-          maxLength={500}
-          className="min-h-[80px] w-full rounded-md border border-border bg-background p-2 text-sm"
-        />
-        <button onClick={submitReview} className="mt-2 rounded-md bg-primary/30 px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary">
-          Submit
-        </button>
+          </>
+        )}
       </section>
 
       <Dialog>
