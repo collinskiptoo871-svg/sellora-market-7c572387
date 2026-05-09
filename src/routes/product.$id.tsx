@@ -39,7 +39,7 @@ function ProductPage() {
   const blocked = useBlockedSellers();
   const navigate = useNavigate();
   const [p, setP] = useState<Product | null>(null);
-  const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null; location: string | null } | null>(null);
+  const [seller, setSeller] = useState<{ display_name: string | null; avatar_url: string | null; location: string | null; verified: boolean } | null>(null);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [saved, setSaved] = useState(false);
   const [rating, setRating] = useState(5);
