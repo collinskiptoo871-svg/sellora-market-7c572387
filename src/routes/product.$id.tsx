@@ -56,10 +56,10 @@ function ProductPage() {
       setP(data as Product);
       const { data: prof } = await supabase
         .from("profiles")
-        .select("display_name,avatar_url,location")
+        .select("display_name,avatar_url,location,verified")
         .eq("user_id", data.seller_id)
         .maybeSingle();
-      if (!cancelled) setSeller(prof ?? null);
+      if (!cancelled) setSeller(prof ? { ...prof, verified: !!prof.verified } : null);
     });
     if (user) {
       supabase.from("favorites").select("id").eq("user_id", user.id).eq("product_id", id).maybeSingle()
