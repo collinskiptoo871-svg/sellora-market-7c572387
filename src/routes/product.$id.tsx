@@ -111,12 +111,19 @@ function ProductPage() {
 
   const submitReview = async () => {
     if (!user) return navigate({ to: "/auth" });
-    const { error } = await supabase.from("reviews").upsert({
-      seller_id: p.seller_id,
-      reviewer_id: user.id,
-      rating,
-      comment: comment.trim() || null,
-    });
+    if (!seller?.verified) {
+      toast.error("Reviews are only allowed for verified sellers.");
+      return;
+    }
+    const { error } = await supabase.from("reviews").upsert(
+      {
+        seller_id: p.seller_id,
+        reviewer_id: user.id,
+        rating,
+        comment: comment.trim() || null,
+      },
+      { onConflict: "seller_id,reviewer_id" }
+    );
     if (error) toast.error(error.message);
     else {
       toast.success("Review submitted");
