@@ -98,6 +98,11 @@ export function ProductCard({ p }: { p: ProductCardData }) {
         >
           <Heart className={`h-4 w-4 ${saved ? "fill-primary text-primary" : "text-foreground"}`} />
         </button>
+        {seller.suspended_until && new Date(seller.suspended_until) > new Date() && (
+          <span className="absolute left-2 top-2 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow">
+            Seller suspended
+          </span>
+        )}
       </div>
       <div className="space-y-1 p-3">
         <p className="text-sm font-bold text-primary">{displayPrice}</p>

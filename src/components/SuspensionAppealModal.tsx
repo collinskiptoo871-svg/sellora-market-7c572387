@@ -74,13 +74,18 @@ export function SuspensionAppealModal() {
         .maybeSingle();
       setLatestFlag((flag as Flag | null) ?? null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: ap } = await (supabase.from("moderation_appeals" as any) as any)
+      // Only consider an appeal that is tied to the current (latest) flag, so a
+      // previously approved/rejected appeal doesn't block creating a fresh one
+      // when the user is suspended again later.
+      const latestFlagId = (flag as Flag | null)?.id ?? null;
+      let appealQuery = (supabase.from("moderation_appeals" as any) as any)
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+      if (latestFlagId) appealQuery = appealQuery.eq("flag_id", latestFlagId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: ap } = await appealQuery.maybeSingle();
       setAppeal((ap as Appeal | null) ?? null);
 
       if (isSusp) setOpen(true);
