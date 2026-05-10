@@ -306,20 +306,69 @@ export function SuspensionAppealModal() {
             </div>
           ) : appealing ? (
             <div className="space-y-2">
+              {isCritical && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs">
+                  <p className="font-semibold text-destructive">Critical appeal required</p>
+                  <p className="text-muted-foreground">
+                    Repeat violation detected. Provide your full legal name, a selfie, and complete{" "}
+                    <Link to="/kyc" className="font-semibold text-primary underline">KYC verification</Link>.
+                  </p>
+                </div>
+              )}
               <label className="block text-xs font-semibold">Tell us why this is a mistake</label>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={4}
                 maxLength={1000}
-                placeholder="Explain what happened and why your account should be restored…"
+                placeholder="Explain what happened and provide proofs…"
                 className="w-full resize-none rounded-md border border-border bg-background p-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
               <p className="text-right text-[10px] text-muted-foreground">{text.length}/1000</p>
+
+              {isCritical && (
+                <>
+                  <input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Full legal name"
+                    className="h-10 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-background p-2 text-xs">
+                    <Upload className="h-4 w-4" />
+                    <span className="flex-1 truncate">{selfieFile?.name ?? "Upload selfie holding your ID"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      className="hidden"
+                      onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                </>
+              )}
+
+              <label className="flex items-start gap-2 pt-1 text-xs">
+                <input
+                  type="checkbox"
+                  checked={termsRead}
+                  onChange={(e) => setTermsRead(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span className="text-muted-foreground">
+                  I have read and agree to the{" "}
+                  <Link to="/legal/$doc" params={{ doc: "terms" }} className="font-semibold text-primary underline">
+                    Terms & Conditions
+                  </Link>{" "}
+                  and understand repeated violations lead to a permanent 120-day ban.
+                </span>
+              </label>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Believe this is a mistake? Submit an appeal — a human reviewer will look at it.
+              {isCritical
+                ? "Repeat violation — a critical appeal with proofs and KYC is required."
+                : "Believe this is a mistake? Submit an appeal — a human reviewer will look at it."}
             </p>
           )}
         </div>
