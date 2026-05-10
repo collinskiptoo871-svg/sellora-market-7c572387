@@ -288,25 +288,45 @@ function Sell() {
           </select>
         </Field>
 
-        <div className={`rounded-lg border p-3 ${geoConfirmed ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-card"}`}>
+        <div className={`rounded-lg border p-3 ${geoConfirmed || manualMode ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-card"}`}>
           <p className="mb-1 flex items-center gap-1 text-sm font-medium">
-            Verify listing location <span className="text-primary">*</span>
-            {geoConfirmed && <CheckCircle2 className="h-4 w-4 text-success" />}
+            {manualMode ? "Enter listing location" : "Verify listing location"} <span className="text-primary">*</span>
+            {geoConfirmed && !manualMode && <CheckCircle2 className="h-4 w-4 text-success" />}
           </p>
           <p className="mb-2 text-xs text-muted-foreground">
-            We re-check your GPS at every post to prevent fake locations. Country is locked; you can refine the city.
+            {manualMode
+              ? "GPS unavailable — select your country and city manually. Listings may be reviewed for location accuracy."
+              : "We re-check your GPS at every post to prevent fake locations."}
           </p>
-          <button type="button" onClick={detectLocation} disabled={geoBusy} className="flex w-full items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
-            {geoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-            {geoConfirmed ? "Re-verify my location" : "Use my current location"}
+          {!manualMode && (
+            <button type="button" onClick={detectLocation} disabled={geoBusy} className="flex w-full items-center justify-center gap-2 rounded-md bg-[image:var(--gradient-primary)] py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+              {geoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+              {geoConfirmed ? "Re-verify my location" : "Use my current location"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => { setManualMode(!manualMode); setGeoConfirmed(false); }}
+            className="mt-2 w-full rounded-md border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary"
+          >
+            {manualMode ? "← Use GPS instead" : "GPS slow? Enter location manually"}
           </button>
-          {country && (
+          {country && !manualMode && (
             <p className="mt-2 text-xs"><strong>Country:</strong> {country} <span className="text-muted-foreground">(locked)</span></p>
           )}
         </div>
 
-        <Field label="City / area (refine)">
-          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Nairobi" className="input" disabled={!geoConfirmed} />
+        {manualMode ? (
+          <Field label="Country">
+            <select value={country} onChange={(e) => setCountry(e.target.value)} className="input">
+              <option value="">Select country…</option>
+              {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+        ) : null}
+
+        <Field label="City / area">
+          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Nairobi" className="input" disabled={!geoConfirmed && !manualMode} />
         </Field>
 
         <label className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
