@@ -110,6 +110,8 @@ function AuthPage() {
         const ip = await getIp();
         const guard = await checkAllowed({ data: { email, fingerprint, ip } });
         if (!guard.allowed) {
+          if (typeof window !== "undefined") localStorage.setItem("sellora_device_signup_blocked", "1");
+          setDeviceBlocked(true);
           if (guard.warning) {
             toast.error(guard.message, { duration: 8000 });
           } else {
