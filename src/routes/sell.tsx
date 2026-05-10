@@ -6,7 +6,7 @@ import { GuestGate } from "@/components/GuestGate";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { recordEvent, isSuspended } from "@/lib/moderation-client";
-import { CATEGORIES } from "@/lib/countries";
+import { CATEGORIES, COUNTRIES } from "@/lib/countries";
 import { describeGeoError, requestGeolocation } from "@/lib/geo";
 import { detectBanned } from "@/lib/banned-items";
 import { currencyForCountry, toUsd, USD_REVIEW_THRESHOLD, formatMoney } from "@/lib/currency";
