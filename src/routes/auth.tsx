@@ -25,6 +25,11 @@ function AuthPage() {
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [deviceBlocked, setDeviceBlocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sellora_device_signup_blocked") === "1";
+  });
+  const [showWhy, setShowWhy] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const checkAllowed = useServerFn(checkSignupAllowed);
   const recordSuccess = useServerFn(recordSignupSuccess);
@@ -105,6 +110,8 @@ function AuthPage() {
         const ip = await getIp();
         const guard = await checkAllowed({ data: { email, fingerprint, ip } });
         if (!guard.allowed) {
+          if (typeof window !== "undefined") localStorage.setItem("sellora_device_signup_blocked", "1");
+          setDeviceBlocked(true);
           if (guard.warning) {
             toast.error(guard.message, { duration: 8000 });
           } else {
@@ -334,7 +341,7 @@ function AuthPage() {
         <span className="text-2xl font-bold text-primary">Sellora</span>
       </Link>
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)]">
-        <div className="mb-4 flex rounded-lg bg-secondary p-1">
+        <div className="mb-2 flex rounded-lg bg-secondary p-1">
           <button
             type="button"
             onClick={() => setMode("signin")}
@@ -344,12 +351,45 @@ function AuthPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMode("signup")}
-            className={`flex-1 rounded-md py-1.5 text-sm font-medium ${mode === "signup" ? "bg-card shadow" : "text-muted-foreground"}`}
+            onClick={() => { if (!deviceBlocked) setMode("signup"); }}
+            disabled={deviceBlocked}
+            aria-disabled={deviceBlocked}
+            title={deviceBlocked ? "Account limit reached for this device" : undefined}
+            className={`flex-1 rounded-md py-1.5 text-sm font-medium ${mode === "signup" ? "bg-card shadow" : "text-muted-foreground"} ${deviceBlocked ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Sign up
           </button>
         </div>
+        {deviceBlocked && (
+          <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <p className="font-semibold text-amber-700 dark:text-amber-300">⚠️ Account limit reached for this device</p>
+              <button
+                type="button"
+                onClick={() => setShowWhy((v) => !v)}
+                className="shrink-0 rounded border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
+              >
+                Why?
+              </button>
+            </div>
+            {showWhy && (
+              <p className="mb-2 text-muted-foreground">
+                This limit prevents spam and fake listings.
+              </p>
+            )}
+            <p className="text-muted-foreground">You can only create 2 accounts per device. You already have 2 accounts registered.</p>
+            <ul className="mt-1 space-y-0.5 text-muted-foreground">
+              <li>✅ You can still sign in to your existing accounts</li>
+              <li>❌ Creating new accounts is disabled on this device</li>
+            </ul>
+            <p className="mt-2">
+              Need more accounts for business?{" "}
+              <Link to="/contact" className="font-semibold text-primary underline">
+                Contact support
+              </Link>
+            </p>
+          </div>
+        )}
         <form onSubmit={onSubmit} className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Email</span>

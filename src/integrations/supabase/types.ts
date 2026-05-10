@@ -257,33 +257,45 @@ export type Database = {
           admin_response: string | null
           created_at: string
           flag_id: string | null
+          full_name: string | null
           id: string
+          is_critical: boolean
           message: string
           reviewed_at: string | null
           reviewed_by: string | null
+          selfie_path: string | null
           status: string
+          terms_accepted: boolean
           user_id: string
         }
         Insert: {
           admin_response?: string | null
           created_at?: string
           flag_id?: string | null
+          full_name?: string | null
           id?: string
+          is_critical?: boolean
           message: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selfie_path?: string | null
           status?: string
+          terms_accepted?: boolean
           user_id: string
         }
         Update: {
           admin_response?: string | null
           created_at?: string
           flag_id?: string | null
+          full_name?: string | null
           id?: string
+          is_critical?: boolean
           message?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selfie_path?: string | null
           status?: string
+          terms_accepted?: boolean
           user_id?: string
         }
         Relationships: [
@@ -546,6 +558,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           avg_response_minutes: number
+          ban_reason: string | null
           banner_url: string | null
           bio: string | null
           country: string | null
@@ -553,6 +566,7 @@ export type Database = {
           display_name: string | null
           id: string
           location: string | null
+          permanent_ban: boolean
           response_rate: number
           shop_description: string | null
           suspended_until: string | null
@@ -567,6 +581,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           avg_response_minutes?: number
+          ban_reason?: string | null
           banner_url?: string | null
           bio?: string | null
           country?: string | null
@@ -574,6 +589,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           location?: string | null
+          permanent_ban?: boolean
           response_rate?: number
           shop_description?: string | null
           suspended_until?: string | null
@@ -588,6 +604,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           avg_response_minutes?: number
+          ban_reason?: string | null
           banner_url?: string | null
           bio?: string | null
           country?: string | null
@@ -595,6 +612,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           location?: string | null
+          permanent_ban?: boolean
           response_rate?: number
           shop_description?: string | null
           suspended_until?: string | null
@@ -729,6 +747,45 @@ export type Database = {
           ip?: string | null
           reason?: string | null
           status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string
+          subject: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string
+          subject?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          subject?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: []

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShieldAlert, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { ShieldAlert, CheckCircle2, XCircle, Clock, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 interface Appeal {
@@ -34,14 +35,21 @@ function formatRemaining(until: string): string {
 export function SuspensionAppealModal() {
   const { user } = useAuth();
   const [suspendedUntil, setSuspendedUntil] = useState<string | null>(null);
+  const [warningCount, setWarningCount] = useState<number>(0);
+  const [permanentBan, setPermanentBan] = useState<boolean>(false);
   const [latestFlag, setLatestFlag] = useState<Flag | null>(null);
   const [appeal, setAppeal] = useState<Appeal | null>(null);
   const [open, setOpen] = useState(false);
   const [appealing, setAppealing] = useState(false);
   const [text, setText] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [termsRead, setTermsRead] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [decisionShown, setDecisionShown] = useState<Appeal | null>(null);
   const [, tick] = useState(0);
+
+  const isCritical = permanentBan || warningCount >= 2;
 
   // tick for countdown
   useEffect(() => {
@@ -57,13 +65,15 @@ export function SuspensionAppealModal() {
     const load = async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: prof } = await (supabase.from("profiles") as any)
-        .select("suspended_until")
+        .select("suspended_until, warning_count, permanent_ban")
         .eq("user_id", user.id)
         .maybeSingle();
       const until = (prof?.suspended_until as string | null) ?? null;
       const isSusp = !!until && new Date(until) > new Date();
       if (!mounted) return;
       setSuspendedUntil(isSusp ? until : null);
+      setWarningCount((prof?.warning_count as number | null) ?? 0);
+      setPermanentBan(!!prof?.permanent_ban);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: flag } = await (supabase.from("moderation_flags" as any) as any)
@@ -147,10 +157,46 @@ export function SuspensionAppealModal() {
       toast.error("Please explain in at least 20 characters.");
       return;
     }
+    if (!termsRead) {
+      toast.error("Please confirm you've read the Terms & Conditions.");
+      return;
+    }
+    if (isCritical) {
+      if (fullName.trim().length < 3) {
+        toast.error("Please enter your full legal name.");
+        return;
+      }
+      if (!selfieFile) {
+        toast.error("A selfie is required for a critical appeal.");
+        return;
+      }
+    }
     setSubmitting(true);
+
+    let selfiePath: string | null = null;
+    if (selfieFile) {
+      const ext = selfieFile.name.split(".").pop() || "jpg";
+      const path = `${user.id}/appeal-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("kyc").upload(path, selfieFile, { upsert: true });
+      if (upErr) {
+        setSubmitting(false);
+        toast.error(upErr.message);
+        return;
+      }
+      selfiePath = path;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from("moderation_appeals" as any) as any)
-      .insert({ user_id: user.id, flag_id: latestFlag?.id ?? null, message: text.trim() })
+      .insert({
+        user_id: user.id,
+        flag_id: latestFlag?.id ?? null,
+        message: text.trim(),
+        is_critical: isCritical,
+        full_name: isCritical ? fullName.trim() : null,
+        selfie_path: selfiePath,
+        terms_accepted: true,
+      })
       .select("*")
       .single();
     setSubmitting(false);
@@ -161,7 +207,10 @@ export function SuspensionAppealModal() {
     setAppeal(data as Appeal);
     setAppealing(false);
     setText("");
-    toast.success("Appeal submitted. We'll review it shortly.");
+    setFullName("");
+    setSelfieFile(null);
+    setTermsRead(false);
+    toast.success(isCritical ? "Critical appeal submitted with your proofs." : "Appeal submitted. We'll review it shortly.");
   };
 
   const remaining = useMemo(() => (suspendedUntil ? formatRemaining(suspendedUntil) : null), [suspendedUntil]);
@@ -257,20 +306,69 @@ export function SuspensionAppealModal() {
             </div>
           ) : appealing ? (
             <div className="space-y-2">
+              {isCritical && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs">
+                  <p className="font-semibold text-destructive">Critical appeal required</p>
+                  <p className="text-muted-foreground">
+                    Repeat violation detected. Provide your full legal name, a selfie, and complete{" "}
+                    <Link to="/kyc" className="font-semibold text-primary underline">KYC verification</Link>.
+                  </p>
+                </div>
+              )}
               <label className="block text-xs font-semibold">Tell us why this is a mistake</label>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={4}
                 maxLength={1000}
-                placeholder="Explain what happened and why your account should be restored…"
+                placeholder="Explain what happened and provide proofs…"
                 className="w-full resize-none rounded-md border border-border bg-background p-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
               <p className="text-right text-[10px] text-muted-foreground">{text.length}/1000</p>
+
+              {isCritical && (
+                <>
+                  <input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Full legal name"
+                    className="h-10 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-background p-2 text-xs">
+                    <Upload className="h-4 w-4" />
+                    <span className="flex-1 truncate">{selfieFile?.name ?? "Upload selfie holding your ID"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      className="hidden"
+                      onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                </>
+              )}
+
+              <label className="flex items-start gap-2 pt-1 text-xs">
+                <input
+                  type="checkbox"
+                  checked={termsRead}
+                  onChange={(e) => setTermsRead(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span className="text-muted-foreground">
+                  I have read and agree to the{" "}
+                  <Link to="/legal/$doc" params={{ doc: "terms" }} className="font-semibold text-primary underline">
+                    Terms & Conditions
+                  </Link>{" "}
+                  and understand repeated violations lead to a permanent 120-day ban.
+                </span>
+              </label>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Believe this is a mistake? Submit an appeal — a human reviewer will look at it.
+              {isCritical
+                ? "Repeat violation — a critical appeal with proofs and KYC is required."
+                : "Believe this is a mistake? Submit an appeal — a human reviewer will look at it."}
             </p>
           )}
         </div>
