@@ -25,6 +25,11 @@ function AuthPage() {
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [busy, setBusy] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [deviceBlocked, setDeviceBlocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sellora_device_signup_blocked") === "1";
+  });
+  const [showWhy, setShowWhy] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const checkAllowed = useServerFn(checkSignupAllowed);
   const recordSuccess = useServerFn(recordSignupSuccess);
