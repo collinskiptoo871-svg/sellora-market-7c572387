@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/contact")({
 function ContactPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -20,12 +23,23 @@ function ContactPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    // Optimistic UX — wire to your backend/email service when ready
-    await new Promise((r) => setTimeout(r, 600));
-    toast.success("Message sent. We'll reply within 24h.");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("support_tickets" as any) as any).insert({
+      user_id: user?.id ?? null,
+      name: name.trim(),
+      email: email.trim(),
+      subject: subject.trim() || null,
+      message: message.trim(),
+      status: "under_review",
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Message received — under review. We'll reply via email within 24h.");
     setSubject("");
     setMessage("");
-    setBusy(false);
   };
 
   return (
@@ -39,9 +53,19 @@ function ContactPage() {
 
       <form onSubmit={submit} className="space-y-3">
         <input
-          value={user?.email || ""}
-          readOnly
-          className="h-11 w-full rounded-md border border-border bg-muted px-3 text-sm"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Full name"
+          className="h-11 w-full rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+        />
+        <input
+          required
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email address"
+          className="h-11 w-full rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
         <input
           required
