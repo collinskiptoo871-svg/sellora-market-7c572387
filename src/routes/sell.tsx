@@ -121,20 +121,33 @@ function Sell() {
       return;
     }
 
-    // Always re-verify GPS before posting — never trust stale state
+    // Verify location: GPS preferred; manual fallback allowed if GPS is slow/blocked
     setBusy(true);
     let verifiedCountry = country;
     let verifiedCity = location;
-    try {
-      const g = await requestGeolocation();
-      verifiedCountry = g.country;
-      verifiedCity = location.trim() || g.city;
-      setCountry(verifiedCountry);
-      setLocation(verifiedCity);
-      setGeoConfirmed(true);
-    } catch (err) {
-      setBusy(false);
-      return toast.error("Location must be verified to list. " + describeGeoError(err));
+    if (manualMode) {
+      if (!country.trim()) {
+        setBusy(false);
+        return toast.error("Please select your country.");
+      }
+      if (!location.trim()) {
+        setBusy(false);
+        return toast.error("Please enter your city / area.");
+      }
+    } else {
+      try {
+        const g = await requestGeolocation();
+        verifiedCountry = g.country;
+        verifiedCity = location.trim() || g.city;
+        setCountry(verifiedCountry);
+        setLocation(verifiedCity);
+        setGeoConfirmed(true);
+      } catch (err) {
+        setBusy(false);
+        return toast.error(
+          "Location must be verified to list. " + describeGeoError(err) + ' Tap "Enter location manually" if GPS is unavailable.',
+        );
+      }
     }
 
     // Determine USD value & whether the listing needs admin review
