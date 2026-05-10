@@ -49,6 +49,7 @@ function Sell() {
   const [busy, setBusy] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
   const [geoConfirmed, setGeoConfirmed] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
 
   const detectLocation = async () => {
     setGeoBusy(true);
